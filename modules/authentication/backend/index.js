@@ -10,7 +10,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 // JWT Secret - Should be in environment variables for production
-const JWT_SECRET = 'employdex-base-platform-secret-key';
+// Matching the JWT_SECRET in the auth middleware
+const JWT_SECRET = 'employdex-base-v1-secure-jwt-secret';
 const JWT_EXPIRES_IN = '24h';
 
 // Event listeners for inter-module communication
