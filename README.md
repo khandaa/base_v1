@@ -94,6 +94,18 @@ base_v1/
 - Email: admin@employdex.com
 - Password: Admin@321
 
+### Demo Users
+
+The following demo users are available with the standard "User" role:
+
+1. John Doe (john.doe@employdex.com)
+2. Jane Smith (jane.smith@employdex.com)
+3. Robert Johnson (robert.johnson@employdex.com)
+4. Emily Williams (emily.williams@employdex.com)
+5. Michael Brown (michael.brown@employdex.com)
+
+All demo users share the password: User@123
+
 ## Database Structure
 
 Refer to the PRD (`base_v1.MD`) for detailed database structure information.
