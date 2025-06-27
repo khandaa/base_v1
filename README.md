@@ -91,8 +91,8 @@ base_v1/
 
 ### Default Admin Credentials
 
-- Username: admin
-- Password: Admin@123
+- Email: admin@employdex.com
+- Password: Admin@321
 
 ## Database Structure
 
