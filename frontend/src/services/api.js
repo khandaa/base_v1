@@ -1,0 +1,123 @@
+import axios from 'axios';
+import { toast } from 'react-toastify';
+
+// Create axios instance with default config
+const api = axios.create({
+  baseURL: '/api',
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
+// Set the JWT token for authenticated requests
+export const setAuthToken = (token) => {
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    localStorage.setItem('token', token);
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+    localStorage.removeItem('token');
+  }
+};
+
+// Initialize token from localStorage if it exists
+const token = localStorage.getItem('token');
+if (token) {
+  setAuthToken(token);
+}
+
+// Add a response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle common error scenarios
+    const { response } = error;
+
+    if (response) {
+      // Handle specific status codes
+      switch (response.status) {
+        case 401:
+          // Unauthorized - token expired or invalid
+          toast.error('Authentication session expired. Please log in again.');
+          // Clear token and redirect to login
+          setAuthToken(null);
+          window.location.href = '/login';
+          break;
+        case 403:
+          // Forbidden - insufficient permissions
+          toast.error('You do not have permission to perform this action.');
+          break;
+        case 404:
+          // Not found
+          toast.error('The requested resource was not found.');
+          break;
+        case 422:
+          // Validation errors
+          if (response.data?.errors) {
+            const errors = response.data.errors;
+            errors.forEach(err => toast.error(err.msg));
+          } else {
+            toast.error('Validation error. Please check your input.');
+          }
+          break;
+        case 500:
+          // Server error
+          toast.error('Server error. Please try again later or contact support.');
+          break;
+        default:
+          // Other errors
+          toast.error(response.data?.error || 'An error occurred. Please try again.');
+      }
+    } else {
+      // Network error or server not responding
+      toast.error('Unable to connect to server. Please check your internet connection.');
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+// Authentication API
+export const authAPI = {
+  login: (credentials) => api.post('/authentication/login', credentials),
+  register: (userData) => api.post('/authentication/register', userData),
+  forgotPassword: (email) => api.post('/authentication/forgot-password', { email }),
+  resetPassword: (token, password) => api.post('/authentication/reset-password', { token, password }),
+};
+
+// User Management API
+export const userAPI = {
+  getUsers: (params) => api.get('/user_management/users', { params }),
+  getUser: (id) => api.get(`/user_management/users/${id}`),
+  createUser: (userData) => api.post('/user_management/users', userData),
+  updateUser: (id, userData) => api.put(`/user_management/users/${id}`, userData),
+  toggleUserStatus: (id, isActive) => api.patch(`/user_management/users/${id}/status`, { is_active: isActive }),
+  deleteUser: (id) => api.delete(`/user_management/users/${id}`),
+};
+
+// Role Management API
+export const roleAPI = {
+  getRoles: () => api.get('/role_management/roles'),
+  getRole: (id) => api.get(`/role_management/roles/${id}`),
+  createRole: (roleData) => api.post('/role_management/roles', roleData),
+  updateRole: (id, roleData) => api.put(`/role_management/roles/${id}`, roleData),
+  deleteRole: (id) => api.delete(`/role_management/roles/${id}`),
+};
+
+// Permission Management API
+export const permissionAPI = {
+  getPermissions: () => api.get('/permission_management/permissions'),
+  getPermission: (id) => api.get(`/permission_management/permissions/${id}`),
+  createPermission: (permissionData) => api.post('/permission_management/permissions', permissionData),
+  updatePermission: (id, permissionData) => api.put(`/permission_management/permissions/${id}`, permissionData),
+  assignPermissions: (roleId, permissions) => api.post('/permission_management/assign', { role_id: roleId, permissions }),
+};
+
+// Logging API
+export const loggingAPI = {
+  getLogs: (params) => api.get('/logging/activity', { params }),
+  getActionTypes: () => api.get('/logging/actions'),
+  getStats: () => api.get('/logging/stats'),
+};
+
+export default api;
