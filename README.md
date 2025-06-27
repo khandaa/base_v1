@@ -94,6 +94,8 @@ base_v1/
 - Email: admin@employdex.com
 - Password: Admin@321
 
+The admin user has full permissions to manage users, roles, and permissions in the system.
+
 ### Demo Users
 
 The following demo users are available with the standard "User" role:

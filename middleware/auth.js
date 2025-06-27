@@ -6,7 +6,8 @@
 const jwt = require('jsonwebtoken');
 
 // JWT Secret - Should be in environment variables for production
-const JWT_SECRET = 'employdex-base-platform-secret-key';
+// JWT Secret - Should match the one used in authentication module
+const JWT_SECRET = 'employdex-base-v1-secure-jwt-secret';
 
 /**
  * Authentication middleware to verify JWT tokens
@@ -22,12 +23,15 @@ const authenticateToken = (req, res, next) => {
     return res.status(401).json({ error: 'Access token is required' });
   }
   
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
+      console.error('JWT verification error:', err);
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
     
-    req.user = user;
+    // Extract the user object from the decoded token payload
+    // The user information is nested under the 'user' property in the JWT payload
+    req.user = decoded.user;
     next();
   });
 };

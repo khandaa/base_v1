@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import jwt_decode from 'jwt-decode';
 import axios from 'axios';
+import { setAuthToken } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext();
@@ -36,16 +37,22 @@ export const AuthProvider = ({ children }) => {
           }
           
           // Set user information from token
+          // The JWT token payload structure has user data nested under 'user'
           setCurrentUser({
-            user_id: decoded.user_id,
-            email: decoded.email,
-            firstName: decoded.firstName,
-            lastName: decoded.lastName
+            user_id: decoded.user?.id,
+            email: decoded.user?.email,
+            firstName: decoded.user?.first_name,
+            lastName: decoded.user?.last_name
           });
           
-          // Set permissions and roles
-          setPermissions(decoded.permissions || []);
-          setRoles(decoded.roles || []);
+          // Set permissions and roles - correctly access from decoded.user
+          setPermissions(decoded.user?.permissions || []);
+          setRoles(decoded.user?.roles || []);
+          
+          // Debug the permissions extraction
+          console.log('Token decoded:', decoded);
+          console.log('User permissions:', decoded.user?.permissions);
+          console.log('User roles:', decoded.user?.roles);
           
           setIsAuthenticated(true);
         } catch (error) {
@@ -65,17 +72,20 @@ export const AuthProvider = ({ children }) => {
       const response = await axios.post('/api/authentication/login', { email, password });
       const { token: newToken, user } = response.data;
       
+      console.log('Login successful, received token:', newToken);
+      
       // Store token in localStorage
       localStorage.setItem('token', newToken);
       
       // Set token in state
       setToken(newToken);
       
-      // Set default auth header for future requests
-      axios.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      // Set auth token for the API service - this updates axios defaults
+      setAuthToken(newToken);
       
       // Decode token to get user info
       const decoded = jwt_decode(newToken);
+      console.log('Decoded token:', decoded);
       
       // Set user info
       setCurrentUser({
@@ -85,9 +95,16 @@ export const AuthProvider = ({ children }) => {
         lastName: user.last_name
       });
       
-      // Set permissions and roles
-      setPermissions(decoded.permissions || []);
-      setRoles(decoded.roles || []);
+      // Set permissions and roles from the decoded token
+      // The JWT token payload structure has user data nested under 'user'
+      const userPermissions = decoded.user?.permissions || [];
+      const userRoles = decoded.user?.roles || [];
+      
+      console.log('Setting permissions:', userPermissions);
+      console.log('Setting roles:', userRoles);
+      
+      setPermissions(userPermissions);
+      setRoles(userRoles);
       
       setIsAuthenticated(true);
       
