@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Pagination, Badge, Alert, Spinner } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaFilter, FaCalendarAlt, FaFileExport, FaEye, FaChartBar } from 'react-icons/fa';
@@ -7,16 +7,43 @@ import 'react-datepicker/dist/react-datepicker.css';
 import { loggingAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
+// Simple error boundary component to handle React errors
+const ErrorBoundary = ({ children }) => {
+  const [hasError, setHasError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    const handleError = (event) => {
+      console.error('Error caught by error boundary:', event.error);
+      setHasError(true);
+      setErrorMessage(event.error?.message || 'Unknown error');
+      event.preventDefault();
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
+  }, []);
+
+  if (hasError) {
+    return (
+      <Container className="my-4 p-3">
+        <Alert variant="danger">
+          <h4>Error Loading Logs</h4>
+          <p>There was an error loading the activity logs component. Please refresh the page and try again.</p>
+          <p className="text-muted">Technical details: {errorMessage}</p>
+        </Alert>
+      </Container>
+    );
+  }
+
+  return children;
+};
+
 const ActivityLogs = () => {
-  // Safely access auth context with fallbacks to prevent null reference errors
-  const auth = useAuth() || {};
-  const { hasPermission = () => false, currentUser = null } = auth;
-  const userRoles = currentUser?.roles || [];
-  
+  // Initialize state for component
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -26,51 +53,121 @@ const ActivityLogs = () => {
   const [selectedAction, setSelectedAction] = useState('');
   const [entityTypes, setEntityTypes] = useState([]);
   const [actionTypes, setActionTypes] = useState([]);
-  
-  // Safely check permissions with fallbacks
-  const canViewLogs = (typeof hasPermission === 'function' && hasPermission(['activity_view'])) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
-  const canExportLogs = (typeof hasPermission === 'function' && hasPermission(['activity_export'])) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
+  const [hasAuth, setHasAuth] = useState(false);
+  const [canViewLogs, setCanViewLogs] = useState(false);
+  const [canExportLogs, setCanExportLogs] = useState(false);
   
   // Pagination settings
   const logsPerPage = 10;
 
-  // Function to fetch activity logs with current filters and pagination
-  const fetchLogs = async () => {
+  // Define fetch callbacks
+  const fetchLogs = useCallback(async () => {
+    if (!canViewLogs) {
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
+      setError(null);
       
-      // Prepare filter parameters
       const params = {
         page: currentPage,
         limit: logsPerPage,
-        search: searchTerm,
-        start_date: startDate ? startDate.toISOString().split('T')[0] : null,
-        end_date: endDate ? endDate.toISOString().split('T')[0] : null,
-        entity_type: selectedEntityType || null,
-        action: selectedAction || null
+        search: searchTerm || undefined,
+        startDate: startDate ? startDate.toISOString() : undefined,
+        endDate: endDate ? endDate.toISOString() : undefined,
+        entityType: selectedEntityType || undefined,
+        action: selectedAction || undefined
       };
       
       const response = await loggingAPI.getLogs(params);
-      
       setLogs(response.data.logs || []);
       setTotalPages(Math.ceil(response.data.total / logsPerPage));
-    } catch (error) {
-      console.error('Error loading activity logs:', error);
-      setError('Failed to load activity logs. Please try again later.');
+    } catch (err) {
+      setError('Failed to fetch activity logs');
+      console.error('Error fetching activity logs:', err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [canViewLogs, currentPage, logsPerPage, searchTerm, startDate, endDate, selectedEntityType, selectedAction]);
 
+  const fetchEntityTypes = useCallback(async () => {
+    if (!canViewLogs) return;
+    
+    try {
+      const response = await loggingAPI.getEntityTypes();
+      setEntityTypes(response.data.entityTypes || []);
+    } catch (err) {
+      console.error('Error fetching entity types:', err);
+    }
+  }, [canViewLogs]);
+
+  const fetchActionTypes = useCallback(async () => {
+    if (!canViewLogs) return;
+    
+    try {
+      const response = await loggingAPI.getActionTypes();
+      setActionTypes(response.data.actionTypes || []);
+    } catch (err) {
+      console.error('Error fetching action types:', err);
+    }
+  }, [canViewLogs]);
+
+  // Check authentication and permissions
   useEffect(() => {
-    if (canViewLogs) {
-      fetchLogs();
-      loadFilters();
-    } else {
+    try {
+      const auth = useAuth();
+      if (!auth) {
+        console.warn('Auth context is unavailable');
+        setError('Authentication context is unavailable. Please try logging out and back in.');
+        setLoading(false);
+        return;
+      }
+      
+      const { currentUser, hasPermission } = auth;
+      const userRoles = currentUser?.roles || [];
+      
+      if (typeof hasPermission !== 'function') {
+        console.error('hasPermission is not a function');
+        setError('Authentication error: permission checking not available');
+        setLoading(false);
+        return;
+      }
+      
+      // Set permission flags
+      const hasViewPermission = hasPermission(['activity_view']) || 
+                               userRoles.some(role => ['Admin', 'full_access'].includes(role));
+      const hasExportPermission = hasPermission(['activity_export']) || 
+                                 userRoles.some(role => ['Admin', 'full_access'].includes(role));
+      
+      setCanViewLogs(hasViewPermission);
+      setCanExportLogs(hasExportPermission);
+      setHasAuth(true);
+      
+    } catch (e) {
+      console.error('Error accessing auth context:', e);
+      setError('An error occurred while checking permissions. Please reload the page.');
       setLoading(false);
     }
-  }, [currentPage, canViewLogs, logsPerPage]);
-
+  }, []);
+  
+  // Load data when permissions are available
+  useEffect(() => {
+    if (hasAuth && canViewLogs && !error) {
+      fetchLogs();
+      fetchEntityTypes();
+      fetchActionTypes();
+    }
+  }, [hasAuth, canViewLogs, fetchLogs, fetchEntityTypes, fetchActionTypes, error]);
+  
+  // Reload logs when page changes
+  useEffect(() => {
+    if (hasAuth && canViewLogs) {
+      fetchLogs();
+    }
+  }, [currentPage, hasAuth, canViewLogs, fetchLogs]);
+  
   const loadFilters = async () => {
     try {
       // Since getEntityTypes isn't available, we'll simulate it with static data
@@ -443,4 +540,13 @@ const convertToCSV = (data) => {
   return [headerRow, ...csvRows].join('\n');
 };
 
-export default ActivityLogs;
+const ActivityLogsWithErrorHandling = () => {
+  return (
+    <ErrorBoundary>
+      <ActivityLogs />
+    </ErrorBoundary>
+  );
+};
+
+// Export component with error boundary wrapper
+export default ActivityLogsWithErrorHandling;

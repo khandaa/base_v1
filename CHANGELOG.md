@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.19] - 2025-07-10
+### Fixed
+- Completed fixes for ActivityLogs component issues
+  - Completely refactored component to properly handle React hooks and state management
+  - Added proper error boundary to catch and display React errors gracefully
+  - Implemented state-based permission flags instead of using variables directly
+  - Fixed circular dependencies between hooks and function declarations
+  - Added comprehensive error handling for auth context access and API calls
+  - Improved user feedback for permission and authentication errors
+
 ## [0.2.18] - 2025-07-09
 ### Fixed
 - Fixed ActivityLogs component issues
