@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated backend to generate a complete date range for the last 7 days
   - Ensured all dates within the range are included, even those with zero activity
   - Properly sorted dates in ascending order for correct chart rendering
+- Fixed permission denied issue on activity logs page
+  - Updated frontend to check for 'activity_view' permission instead of 'log_view'
+  - Added role-based access check for Admin and full_access roles
+  - Aligned permission naming between frontend and backend components
 
 ## [0.2.12] - 2025-07-09
 ### Added

@@ -8,7 +8,8 @@ import { loggingAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ActivityLogs = () => {
-  const { hasPermission } = useAuth();
+  const { hasPermission, currentUser } = useAuth();
+  const userRoles = currentUser?.roles || [];
   
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -24,22 +25,14 @@ const ActivityLogs = () => {
   const [entityTypes, setEntityTypes] = useState([]);
   const [actionTypes, setActionTypes] = useState([]);
   
-  const canViewLogs = hasPermission(['log_view']);
-  const canExportLogs = hasPermission(['log_export']);
+  const canViewLogs = hasPermission(['activity_view']) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
+  const canExportLogs = hasPermission(['activity_export']) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
   
   // Pagination settings
   const logsPerPage = 10;
 
-  useEffect(() => {
-    if (canViewLogs) {
-      loadLogs();
-      loadFilters();
-    } else {
-      setLoading(false);
-    }
-  }, [currentPage, canViewLogs]);
-
-  const loadLogs = async () => {
+  // Function to fetch activity logs with current filters and pagination
+  const fetchLogs = async () => {
     try {
       setLoading(true);
       
@@ -66,6 +59,15 @@ const ActivityLogs = () => {
     }
   };
 
+  useEffect(() => {
+    if (canViewLogs) {
+      fetchLogs();
+      loadFilters();
+    } else {
+      setLoading(false);
+    }
+  }, [currentPage, canViewLogs, logsPerPage]);
+
   const loadFilters = async () => {
     try {
       // Since getEntityTypes isn't available, we'll simulate it with static data
@@ -84,12 +86,12 @@ const ActivityLogs = () => {
   const handleSearch = (e) => {
     e.preventDefault();
     setCurrentPage(1);
-    loadLogs();
+    fetchLogs();
   };
   
   const handleFilterChange = () => {
     setCurrentPage(1);
-    loadLogs();
+    fetchLogs();
   };
   
   const handleClearFilters = () => {
@@ -99,7 +101,7 @@ const ActivityLogs = () => {
     setSelectedEntityType('');
     setSelectedAction('');
     setCurrentPage(1);
-    loadLogs();
+    setTimeout(() => fetchLogs(), 0); // Use setTimeout to ensure state updates before fetch
   };
 
   const handleExport = async () => {
