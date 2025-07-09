@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Implemented modal dialog for managing role permissions without leaving the list page
   - Added categorized permission selection interface for better organization
   - Implemented real-time permission updates with optimistic UI updates
+- Implemented modern glassmorphism UI design
+  - Added frosted glass effect to cards, modals, tables, and form elements
+  - Enhanced buttons with glass effect and subtle hover animations
+  - Added glass effect to badges and inputs for a cohesive design
+  - Implemented a gradient background for improved visual appeal
+  - Applied consistent styling across role management and activity logs pages
 
 ## [0.2.19] - 2025-07-10
 ### Fixed

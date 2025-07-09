@@ -403,12 +403,12 @@ const ActivityLogList = () => {
                             )}
                           </td>
                           <td>
-                            <Badge bg={getActionBadgeColor(log.action_type)}>
+                            <Badge bg={getActionBadgeColor(log.action_type)} className="glass-badge">
                               {log.action_type}
                             </Badge>
                           </td>
                           <td>
-                            <Badge bg={getEntityBadgeColor(log.entity_type)} className="text-capitalize">
+                            <Badge bg={getEntityBadgeColor(log.entity_type)} className="text-capitalize glass-badge">
                               {log.entity_type}
                             </Badge>
                           </td>
@@ -417,7 +417,7 @@ const ActivityLogList = () => {
                           </td>
                           <td>
                             <Link to={`/logs/${log.log_id}`}>
-                              <Button size="sm" variant="outline-primary">
+                              <Button size="sm" variant="outline-primary" className="glass-btn">
                                 <FaEye className="me-1" /> View
                               </Button>
                             </Link>
@@ -443,6 +443,7 @@ const ActivityLogList = () => {
                     <Form.Select 
                       style={{ width: 'auto', display: 'inline-block' }}
                       value={pageSize}
+                      className="glass-input"
                       onChange={(e) => {
                         setPageSize(Number(e.target.value));
                         setCurrentPage(1);
@@ -460,7 +461,7 @@ const ActivityLogList = () => {
                     <Button
                       variant="outline-primary"
                       size="sm"
-                      className="me-2"
+                      className="me-2 glass-btn"
                       disabled={currentPage === 1}
                       onClick={() => handlePageChange(currentPage - 1)}
                     >
@@ -474,6 +475,7 @@ const ActivityLogList = () => {
                     <Button
                       variant="outline-primary"
                       size="sm"
+                      className="glass-btn"
                       disabled={currentPage === totalPages}
                       onClick={() => handlePageChange(currentPage + 1)}
                     >

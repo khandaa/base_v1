@@ -185,41 +185,42 @@ const RoleList = () => {
 
   return (
     <Container fluid>
-      <Row className="mb-4">
-        <Col md={6}>
-          <h2>Role Management</h2>
-          <p className="text-muted">Manage system roles and their permissions</p>
-        </Col>
-        <Col md={6} className="text-md-end">
-          {canCreateRole && (
-            <>
-              <Button 
-                variant="outline-primary" 
-                as={Link} 
-                to="/roles/bulk-upload"
-                className="d-inline-flex align-items-center me-2"
-              >
-                <FaCloudUploadAlt className="me-2" /> Bulk Upload
-              </Button>
-              <Button 
-                variant="primary" 
-                as={Link} 
-                to="/roles/create"
-                className="d-inline-flex align-items-center"
-              >
-                <FaPlus className="me-2" /> Add New Role
-              </Button>
-            </>
-          )}
-        </Col>
-      </Row>
-      
-      <Card className="mb-4">
+      <Card className="mb-4 glass-card">
         <Card.Body>
-          <Row className="mb-3">
+          <Row className="mb-4">
             <Col md={6}>
+              <h2>Role Management</h2>
+              <p className="text-muted">Manage system roles and their permissions</p>
+            </Col>
+            <Col md={6} className="text-md-end">
+              {canCreateRole && (
+                <>
+                  <Button 
+                    variant="outline-primary" 
+                    as={Link} 
+                    to="/roles/bulk-upload"
+                    className="d-inline-flex align-items-center me-2 glass-btn"
+                  >
+                    <FaCloudUploadAlt className="me-2" /> Bulk Upload
+                  </Button>
+                  <Button 
+                    variant="primary" 
+                    as={Link} 
+                    to="/roles/create"
+                    className="d-inline-flex align-items-center glass-btn glass-btn-primary"
+                  >
+                    <FaPlus className="me-2" /> Add New Role
+                  </Button>
+                </>
+              )}
+            </Col>
+          </Row>
+          <Row>
+            <Col md={6}>
+              <h6>Search Roles</h6>
               <InputGroup>
                 <Form.Control 
+                  type="search" 
                   placeholder="Search roles..."
                   value={searchTerm}
                   onChange={handleSearch}
@@ -238,8 +239,8 @@ const RoleList = () => {
               </div>
             </div>
           ) : (
-            <div className="table-responsive">
-              <Table hover bordered className="align-middle">
+            <div className="table-responsive table-container glass-table">
+              <Table hover className="align-middle">
                 <thead>
                   <tr>
                     <th width="5%">#</th>
@@ -268,12 +269,12 @@ const RoleList = () => {
                           {role.permissions && role.permissions.length > 0 ? (
                             <div className="d-flex flex-wrap">
                               {role.permissions.slice(0, 3).map(permission => (
-                                <Badge key={permission.permission_id} bg="secondary" className="me-1 mb-1 badge-permission">
+                                <Badge key={permission.permission_id} bg="secondary" className="me-1 mb-1 badge-permission glass-badge">
                                   {permission.name}
                                 </Badge>
                               ))}
                               {role.permissions.length > 3 && (
-                                <Badge bg="info" className="badge-permission">
+                                <Badge bg="info" className="badge-permission glass-badge">
                                   +{role.permissions.length - 3} more
                                 </Badge>
                               )}
@@ -287,7 +288,7 @@ const RoleList = () => {
                             <Button 
                               variant="outline-primary" 
                               size="sm" 
-                              className="me-2" 
+                              className="me-2 glass-btn" 
                               onClick={() => navigate(`/roles/${role.role_id}`)} 
                               title="View role details"
                             >
@@ -299,7 +300,7 @@ const RoleList = () => {
                                 <Button 
                                   variant="outline-primary" 
                                   size="sm" 
-                                  className="me-2" 
+                                  className="me-2 glass-btn" 
                                   onClick={() => handleShowPermissionModal(role)} 
                                   title="Edit permissions"
                                 >
@@ -308,7 +309,7 @@ const RoleList = () => {
                                 <Button 
                                   variant="outline-info" 
                                   size="sm" 
-                                  className="me-2" 
+                                  className="me-2 glass-btn" 
                                   onClick={() => navigate(`/roles/edit/${role.role_id}`)} 
                                   title="Edit role"
                                 >
@@ -323,6 +324,7 @@ const RoleList = () => {
                                 size="sm" 
                                 onClick={() => handleDeleteRole(role.role_id, role.name)}
                                 title="Delete role"
+                                className="glass-btn"
                               >
                                 <FaTrash />
                               </Button>
@@ -345,8 +347,8 @@ const RoleList = () => {
         </Card.Body>
       </Card>
       
-      <Card>
-        <Card.Header className="bg-white">
+      <Card className="glass-card mb-4">
+        <Card.Header>
           <h5 className="mb-0">About Roles</h5>
         </Card.Header>
         <Card.Body>
@@ -376,7 +378,9 @@ const RoleList = () => {
         onHide={() => setShowPermissionModal(false)}
         size="lg"
         backdrop="static"
+        className="glass-modal-container"
       >
+        <div className="glass-modal">
         <Modal.Header closeButton>
           <Modal.Title>
             Edit Permissions for {selectedRole?.name}
@@ -412,6 +416,7 @@ const RoleList = () => {
                             id={`permission-${permission.permission_id}`}
                             label={permission.name}
                             checked={isChecked}
+                            className="glass-checkbox"
                             onChange={(e) => handlePermissionChange(permission.permission_id, e.target.checked)}
                           />
                         </Col>
@@ -432,7 +437,7 @@ const RoleList = () => {
         <Modal.Footer>
           <div className="d-flex justify-content-between w-100">
             <div>
-              <Badge bg="primary" className="me-2">
+              <Badge bg="primary" className="me-2 glass-badge">
                 {selectedPermissionIds.length} permissions selected
               </Badge>
             </div>
@@ -440,7 +445,7 @@ const RoleList = () => {
               <Button 
                 variant="secondary" 
                 onClick={() => setShowPermissionModal(false)}
-                className="me-2"
+                className="me-2 glass-btn"
               >
                 Cancel
               </Button>
@@ -448,12 +453,14 @@ const RoleList = () => {
                 variant="primary" 
                 onClick={handleSavePermissions}
                 disabled={savingPermissions}
+                className="glass-btn glass-btn-primary"
               >
                 {savingPermissions ? 'Saving...' : 'Save Permissions'}
               </Button>
             </div>
           </div>
         </Modal.Footer>
+        </div>
       </Modal>
     </Container>
   );

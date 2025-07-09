@@ -102,7 +102,7 @@ const ActivityLogDetail = () => {
   if (!canViewLogs) {
     return (
       <Container fluid>
-        <Card className="text-center p-5">
+        <Card className="text-center p-5 glass-card">
           <Card.Body>
             <div className="text-danger mb-3">
               <i className="fas fa-exclamation-circle fa-3x"></i>
@@ -152,29 +152,34 @@ const ActivityLogDetail = () => {
   }
 
   return (
-    <Container fluid>
-      <Row className="mb-4">
+    <Container fluid className="py-4">
+      <Row className="mb-3">
         <Col>
-          <Button as={Link} to="/logs" variant="light" className="mb-3">
+          <Button as={Link} to="/logs" variant="outline-primary" className="glass-btn">
             <FaArrowLeft className="me-2" /> Back to Logs
           </Button>
+        </Col>
+      </Row>
+
+      <Row>
+        <Col>
           <h2>Activity Log Details</h2>
         </Col>
       </Row>
 
       <Row>
         <Col lg={4}>
-          <Card className="mb-4">
+          <Card className="mb-4 glass-card">
             <Card.Body>
               <div className="text-center mb-4">
                 <div className="rounded-circle bg-light p-3 d-inline-flex mb-3">
                   <FaDatabase size={30} className="text-primary" />
                 </div>
                 <h4>Log Entry #{log.log_id}</h4>
-                <Badge bg={getActionBadgeColor(log.action_type)} className="mx-1 fw-normal fs-6">
+                <Badge bg={getActionBadgeColor(log.action_type)} className="mx-1 fw-normal fs-6 glass-badge">
                   {log.action_type}
                 </Badge>
-                <Badge bg={getEntityBadgeColor(log.entity_type)} className="mx-1 fw-normal fs-6 text-capitalize">
+                <Badge bg={getEntityBadgeColor(log.entity_type)} className="mx-1 fw-normal fs-6 text-capitalize glass-badge">
                   {log.entity_type}
                 </Badge>
               </div>
@@ -219,8 +224,8 @@ const ActivityLogDetail = () => {
             </Card.Body>
           </Card>
 
-          <Card>
-            <Card.Header className="bg-white">
+          <Card className="glass-card">
+            <Card.Header>
               <h5 className="mb-0">Related Information</h5>
             </Card.Header>
             <Card.Body>
@@ -229,7 +234,7 @@ const ActivityLogDetail = () => {
                   as={Link}
                   to={`/users/${log.entity_id}`}
                   variant="outline-primary"
-                  className="mb-2 d-block"
+                  className="mb-2 d-block glass-btn"
                 >
                   <FaUser className="me-2" /> View User Profile
                 </Button>
@@ -240,7 +245,7 @@ const ActivityLogDetail = () => {
                   as={Link}
                   to={`/roles/${log.entity_id}`}
                   variant="outline-primary"
-                  className="mb-2 d-block"
+                  className="mb-2 d-block glass-btn"
                 >
                   <FaShieldAlt className="me-2" /> View Role Details
                 </Button>

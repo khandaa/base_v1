@@ -297,22 +297,22 @@ const ActivityLogs = () => {
         </Col>
         <Col xs="auto">
           {canExportLogs && (
-            <Button variant="outline-primary" onClick={handleExport}>
+            <Button variant="outline-primary" onClick={handleExport} className="glass-btn">
               <FaFileExport className="me-2" /> Export Logs
             </Button>
           )}
-          <Link to="/logs/analytics" className="btn btn-primary ms-2">
+          <Link to="/logs/analytics" className="btn btn-primary ms-2 glass-btn glass-btn-primary">
             <FaChartBar className="me-2" /> Analytics
           </Link>
         </Col>
       </Row>
       
-      <Card className="mb-4">
+      <Card className="mb-4 glass-card">
         <Card.Header>
           <h5 className="mb-0">Filters</h5>
         </Card.Header>
         <Card.Body>
-          <Form onSubmit={handleSearch}>
+          <Form onSubmit={handleSearch} className="glass-form">
             <Row>
               <Col lg={4}>
                 <Form.Group className="mb-3">
@@ -323,8 +323,9 @@ const ActivityLogs = () => {
                       placeholder="Search users, actions, or entities"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                      className="glass-input"
                     />
-                    <Button type="submit" variant="primary">
+                    <Button type="submit" variant="primary" className="glass-btn glass-btn-primary">
                       <FaSearch />
                     </Button>
                   </InputGroup>
@@ -344,7 +345,7 @@ const ActivityLogs = () => {
                       selectsStart
                       startDate={startDate}
                       endDate={endDate}
-                      className="form-control"
+                      className="form-control glass-input"
                       placeholderText="Start Date"
                     />
                     <DatePicker
@@ -384,6 +385,7 @@ const ActivityLogs = () => {
                   <Form.Select
                     value={selectedAction}
                     onChange={(e) => setSelectedAction(e.target.value)}
+                    className="glass-input"
                   >
                     <option value="">All Actions</option>
                     {actionTypes.map((action, index) => (
@@ -397,10 +399,10 @@ const ActivityLogs = () => {
             </Row>
             
             <div className="d-flex justify-content-end">
-              <Button variant="outline-secondary" onClick={handleClearFilters} className="me-2">
+              <Button variant="outline-secondary" onClick={handleClearFilters} className="me-2 glass-btn">
                 Clear Filters
               </Button>
-              <Button variant="primary" onClick={handleFilterChange}>
+              <Button variant="primary" onClick={handleFilterChange} className="glass-btn glass-btn-primary">
                 <FaFilter className="me-2" /> Apply Filters
               </Button>
             </div>
@@ -408,7 +410,7 @@ const ActivityLogs = () => {
         </Card.Body>
       </Card>
       
-      <Card>
+      <Card className="glass-card">
         <Card.Body>
           {loading ? (
             <div className="text-center py-5">
@@ -421,6 +423,7 @@ const ActivityLogs = () => {
             <Alert variant="info">No activity logs found matching the current filters.</Alert>
           ) : (
             <>
+              <div className="table-container glass-table">
               <Table responsive hover className="align-middle">
                 <thead>
                   <tr>
@@ -447,13 +450,13 @@ const ActivityLogs = () => {
                         )}
                       </td>
                       <td>
-                        <Badge bg={getBadgeVariant(log.action)}>{log.action}</Badge>
+                        <Badge bg={getBadgeVariant(log.action)} className="glass-badge">{log.action}</Badge>
                       </td>
                       <td>{log.entity_type}</td>
                       <td>{log.entity_id}</td>
                       <td>{log.ip_address || 'N/A'}</td>
                       <td>
-                        <Link to={`/logs/${log.log_id}`} className="btn btn-sm btn-outline-primary">
+                        <Link to={`/logs/${log.log_id}`} className="btn btn-sm btn-outline-primary glass-btn">
                           <FaEye /> View Details
                         </Link>
                       </td>
@@ -461,6 +464,7 @@ const ActivityLogs = () => {
                   ))}
                 </tbody>
               </Table>
+              </div>
               
               <div className="d-flex justify-content-between align-items-center mt-3">
                 <p className="mb-0">

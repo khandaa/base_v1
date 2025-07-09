@@ -14,7 +14,7 @@ const Navbar = ({ toggleSidebar, collapsed }) => {
   };
 
   return (
-    <BootstrapNavbar bg="white" expand="lg" className="mb-4 shadow-sm">
+    <BootstrapNavbar expand="lg" className="mb-4 glass-nav">
       <Container fluid>
         <button
           className="btn btn-light border-0 d-flex align-items-center"

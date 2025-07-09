@@ -11,7 +11,7 @@ const MainLayout = () => {
   };
 
   return (
-    <div className={`app-container ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
+    <div className={`app-container glass-bg ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
       <Sidebar collapsed={sidebarCollapsed} />
       <div className={`content-container ${sidebarCollapsed ? 'expanded' : ''}`}>
         <Navbar toggleSidebar={toggleSidebar} collapsed={sidebarCollapsed} />
