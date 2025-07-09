@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Modal, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt, FaCloudUploadAlt } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt, FaCloudUploadAlt, FaKey } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { roleAPI } from '../../services/api';
+import { roleAPI, permissionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 const RoleList = () => {
@@ -11,6 +11,12 @@ const RoleList = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredRoles, setFilteredRoles] = useState([]);
+  const [permissions, setPermissions] = useState([]);
+  const [selectedRole, setSelectedRole] = useState(null);
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [savingPermissions, setSavingPermissions] = useState(false);
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
   
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -21,7 +27,28 @@ const RoleList = () => {
 
   useEffect(() => {
     fetchRoles();
+    fetchPermissions();
   }, []);
+  
+  // Fetch all available permissions
+  const fetchPermissions = async () => {
+    try {
+      setPermissionsLoading(true);
+      const response = await permissionAPI.getPermissions();
+      if (response.data && Array.isArray(response.data)) {
+        setPermissions(response.data);
+      } else if (response.data && Array.isArray(response.data.permissions)) {
+        setPermissions(response.data.permissions);
+      } else {
+        setPermissions([]);
+      }
+    } catch (error) {
+      console.error('Error fetching permissions:', error);
+      toast.error('Failed to load permissions');
+    } finally {
+      setPermissionsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (roles.length > 0 && searchTerm) {
@@ -85,6 +112,75 @@ const RoleList = () => {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+  };
+
+  // Handle opening permission edit modal
+  const handleShowPermissionModal = (role) => {
+    setSelectedRole(role);
+    
+    // Initialize selected permissions from the role
+    const permissionIds = role.permissions ? 
+      role.permissions.map(permission => permission.permission_id) : 
+      [];
+    
+    setSelectedPermissionIds(permissionIds);
+    setShowPermissionModal(true);
+  };
+  
+  // Group permissions by category for better organization in modal
+  const groupedPermissions = permissions.reduce((acc, permission) => {
+    const category = permission.name.split('_')[0]; // Assuming permissions are named like "user_create"
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(permission);
+    return acc;
+  }, {});
+  
+  // Handle permission checkbox change
+  const handlePermissionChange = (permissionId, isChecked) => {
+    if (isChecked) {
+      setSelectedPermissionIds(prev => [...prev, permissionId]);
+    } else {
+      setSelectedPermissionIds(prev => prev.filter(id => id !== permissionId));
+    }
+  };
+  
+  // Handle saving role permissions
+  const handleSavePermissions = async () => {
+    if (!selectedRole) return;
+    
+    try {
+      setSavingPermissions(true);
+      
+      await permissionAPI.assignPermissions(selectedRole.role_id, selectedPermissionIds);
+      
+      // Update the role in local state with new permissions
+      const updatedPermissions = permissions.filter(p => selectedPermissionIds.includes(p.permission_id));
+      
+      setRoles(roles.map(role => {
+        if (role.role_id === selectedRole.role_id) {
+          return { ...role, permissions: updatedPermissions };
+        }
+        return role;
+      }));
+      
+      // Also update filtered roles
+      setFilteredRoles(filteredRoles.map(role => {
+        if (role.role_id === selectedRole.role_id) {
+          return { ...role, permissions: updatedPermissions };
+        }
+        return role;
+      }));
+      
+      toast.success(`Permissions updated for ${selectedRole.name}`);
+      setShowPermissionModal(false);
+    } catch (error) {
+      console.error('Error saving permissions:', error);
+      toast.error('Failed to update permissions');
+    } finally {
+      setSavingPermissions(false);
+    }
   };
 
   return (
@@ -199,15 +295,26 @@ const RoleList = () => {
                             </Button>
                             
                             {canEditRole && (
-                              <Button 
-                                variant="outline-info" 
-                                size="sm" 
-                                className="me-2" 
-                                onClick={() => navigate(`/roles/edit/${role.role_id}`)} 
-                                title="Edit role"
-                              >
-                                <FaEdit />
-                              </Button>
+                              <>
+                                <Button 
+                                  variant="outline-primary" 
+                                  size="sm" 
+                                  className="me-2" 
+                                  onClick={() => handleShowPermissionModal(role)} 
+                                  title="Edit permissions"
+                                >
+                                  <FaKey />
+                                </Button>
+                                <Button 
+                                  variant="outline-info" 
+                                  size="sm" 
+                                  className="me-2" 
+                                  onClick={() => navigate(`/roles/edit/${role.role_id}`)} 
+                                  title="Edit role"
+                                >
+                                  <FaEdit />
+                                </Button>
+                              </>
                             )}
                             
                             {canDeleteRole && !['Admin', 'System'].includes(role.name) && (
@@ -262,6 +369,92 @@ const RoleList = () => {
           </Row>
         </Card.Body>
       </Card>
+      
+      {/* Permission Edit Modal */}
+      <Modal 
+        show={showPermissionModal} 
+        onHide={() => setShowPermissionModal(false)}
+        size="lg"
+        backdrop="static"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            Edit Permissions for {selectedRole?.name}
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          {permissionsLoading ? (
+            <div className="text-center py-4">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              {selectedRole && selectedRole.name && ['Admin', 'System'].includes(selectedRole.name) && (
+                <Alert variant="warning" className="mb-3">
+                  <FaShieldAlt className="me-2" />
+                  This is a system role. Be careful when modifying its permissions as it may affect system functionality.
+                </Alert>
+              )}
+              
+              {Object.entries(groupedPermissions).sort().map(([category, categoryPermissions]) => (
+                <div key={category} className="mb-4">
+                  <h5 className="text-capitalize">{category}</h5>
+                  <hr />
+                  <Row>
+                    {categoryPermissions.map(permission => {
+                      const isChecked = selectedPermissionIds.includes(permission.permission_id);
+                      return (
+                        <Col md={4} key={permission.permission_id} className="mb-2">
+                          <Form.Check 
+                            type="checkbox"
+                            id={`permission-${permission.permission_id}`}
+                            label={permission.name}
+                            checked={isChecked}
+                            onChange={(e) => handlePermissionChange(permission.permission_id, e.target.checked)}
+                          />
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </div>
+              ))}
+              
+              {Object.keys(groupedPermissions).length === 0 && (
+                <Alert variant="info">
+                  No permissions available.
+                </Alert>
+              )}
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <div className="d-flex justify-content-between w-100">
+            <div>
+              <Badge bg="primary" className="me-2">
+                {selectedPermissionIds.length} permissions selected
+              </Badge>
+            </div>
+            <div>
+              <Button 
+                variant="secondary" 
+                onClick={() => setShowPermissionModal(false)}
+                className="me-2"
+              >
+                Cancel
+              </Button>
+              <Button 
+                variant="primary" 
+                onClick={handleSavePermissions}
+                disabled={savingPermissions}
+              >
+                {savingPermissions ? 'Saving...' : 'Save Permissions'}
+              </Button>
+            </div>
+          </div>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

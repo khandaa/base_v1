@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added inline role editing capability directly from user list page
   - Implemented modal dialog for editing user roles without leaving the list page
   - Added real-time role update with optimistic UI updates
+- Enhanced Role List functionality
+  - Added inline permission editing capability directly from role list page
+  - Implemented modal dialog for managing role permissions without leaving the list page
+  - Added categorized permission selection interface for better organization
+  - Implemented real-time permission updates with optimistic UI updates
 
 ## [0.2.19] - 2025-07-10
 ### Fixed
