@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.12] - 2025-07-09
+### Added
+- Added activity log access for admin and full_access roles
+  - Created new 'activity_view' permission in the database
+  - Assigned this permission to admin and full_access roles
+  - Modified logging API endpoints to use 'activity_view' permission instead of 'permission_view'
+  - Users with these roles can now access activity logs and statistics
+
 ## [0.2.11] - 2025-07-09
 ### Added
 - Made dashboard cards clickable to navigate to their respective pages

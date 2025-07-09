@@ -82,11 +82,26 @@ const init = (app) => {
 /**
  * @route GET /api/logging/activity
  * @description Get activity logs with pagination and filtering
- * @access Private - Requires permission_view permission
+ * @access Private - Requires activity_view permission or admin/full_access role
  */
 router.get('/activity', [
   authenticateToken, 
-  checkPermissions(['permission_view']),
+  (req, res, next) => {
+    // Allow access if user has activity_view permission OR is admin/full_access
+    const userRoles = req.user.roles || [];
+    const userPermissions = req.user.permissions || [];
+    
+    if (userPermissions.includes('activity_view') ||
+        userRoles.includes('Admin') ||
+        userRoles.includes('full_access')) {
+      next();
+    } else {
+      return res.status(403).json({ 
+        error: 'Access denied: insufficient permissions',
+        required: ['activity_view']
+      });
+    }
+  },
   query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
   query('limit').optional().isInt({ min: 1, max: 100 }).withMessage('Limit must be between 1 and 100'),
   query('action').optional().isString(),
@@ -237,7 +252,27 @@ router.get('/actions', authenticateToken, checkPermissions(['permission_view']),
  * @description Get activity statistics (counts by action type, recent activity)
  * @access Private - Requires permission_view permission
  */
-router.get('/stats', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
+/**
+ * @route GET /api/logging/stats
+ * @description Get activity log statistics
+ * @access Private - Requires activity_view permission or admin/full_access role
+ */
+router.get('/stats', authenticateToken, (req, res, next) => {
+    // Allow access if user has activity_view permission OR is admin/full_access
+    const userRoles = req.user.roles || [];
+    const userPermissions = req.user.permissions || [];
+    
+    if (userPermissions.includes('activity_view') ||
+        userRoles.includes('Admin') ||
+        userRoles.includes('full_access')) {
+      next();
+    } else {
+      return res.status(403).json({ 
+        error: 'Access denied: insufficient permissions',
+        required: ['activity_view']
+      });
+    }
+  }, async (req, res) => {
   try {
     const db = req.app.locals.db;
     
