@@ -93,6 +93,14 @@ export const userAPI = {
   updateUser: (id, userData) => api.put(`/user_management/users/${id}`, userData),
   toggleUserStatus: (id, isActive) => api.patch(`/user_management/users/${id}/status`, { is_active: isActive }),
   deleteUser: (id) => api.delete(`/user_management/users/${id}`),
+  uploadBulkUsers: (formData) => api.post('/user_management/users/bulk', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  }),
+  downloadUserTemplate: () => api.get('/user_management/users/template', {
+    responseType: 'blob'
+  }),
 };
 
 // Role Management API

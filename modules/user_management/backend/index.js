@@ -1,15 +1,20 @@
 /**
  * User Management Module - Backend Implementation
  * Created: 2025-06-27
+ * Updated: 2025-07-09 - Added bulk user upload functionality
  */
 
 const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
 const { authenticateToken } = require('../../../middleware/auth');
 const { checkPermissions } = require('../../../middleware/rbac');
 const { dbMethods } = require('../../database/backend');
+const multer = require('multer');
+const csv = require('csv-parser');
+const fs = require('fs');
+const path = require('path');
+const bcrypt = require('bcryptjs');
 
 // Register module events
 const registerModuleEvents = (eventBus) => {
@@ -23,6 +28,40 @@ const registerModuleEvents = (eventBus) => {
     // Handle user deletion events
   });
 };
+
+// Set up multer storage configuration
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, '../../../uploads');
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    // Create unique filename with timestamp
+    const uniquePrefix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniquePrefix + '-' + file.originalname);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Accept only CSV files
+  if (file.mimetype === 'text/csv' || file.originalname.endsWith('.csv')) {
+    cb(null, true);
+  } else {
+    cb(new Error('Only CSV files are allowed'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024 // 5MB max file size
+  }
+});
 
 // Initialize the module
 const init = (app) => {
@@ -551,6 +590,210 @@ router.delete('/users/:id', authenticateToken, checkPermissions(['user_delete'])
   }
 });
 
-// Export router and init function
-module.exports = router;
-module.exports.init = init;
+/**
+ * @route GET /api/user_management/users/template
+ * @description Download a CSV template for bulk user upload
+ * @access Private - Requires user_create permission
+ */
+router.get('/users/template', authenticateToken, checkPermissions(['user_create']), async (req, res) => {
+  try {
+    // CSV header row
+    const header = 'firstName,lastName,email,password,roles,isActive\n';
+    
+    // Example row
+    const exampleRow = 'John,Doe,john.doe@example.com,StrongP@ss1,User,true\n';
+    
+    // Set response headers
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=user_template.csv');
+    
+    // Send the CSV content
+    res.send(header + exampleRow);
+    
+    // Log activity
+    const eventBus = req.app.locals.eventBus;
+    eventBus.emit('log:activity', {
+      user_id: req.user.user_id,
+      action: 'USER_TEMPLATE_DOWNLOAD',
+      details: 'Downloaded bulk user upload template',
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+    
+  } catch (error) {
+    console.error('Error creating template:', error);
+    return res.status(500).json({ error: 'Failed to generate template file' });
+  }
+});
+
+/**
+ * @route POST /api/user_management/users/bulk
+ * @description Upload and process multiple users from CSV file
+ * @access Private - Requires user_create permission
+ */
+router.post('/users/bulk', authenticateToken, checkPermissions(['user_create']), upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const db = req.app.locals.db;
+    const eventBus = req.app.locals.eventBus;
+    
+    // Results tracking
+    const results = {
+      total: 0,
+      successful: 0,
+      failed: 0,
+      errors: []
+    };
+    
+    // Array to store all user processing promises
+    const processPromises = [];
+    
+    // Process the CSV file
+    const processFile = new Promise((resolve, reject) => {
+      fs.createReadStream(req.file.path)
+        .pipe(csv())
+        .on('data', async (row) => {
+          results.total++;
+          
+          // Process each row
+          const processPromise = processUserRow(row, db, results, eventBus, req.user.user_id);
+          processPromises.push(processPromise);
+        })
+        .on('end', async () => {
+          try {
+            // Wait for all user processing to complete
+            await Promise.allSettled(processPromises);
+            
+            // Delete the temporary file
+            fs.unlinkSync(req.file.path);
+            
+            // Log activity
+            eventBus.emit('log:activity', {
+              user_id: req.user.user_id,
+              action: 'USER_BULK_UPLOAD',
+              details: `Processed ${results.total} users, ${results.successful} created successfully, ${results.failed} failed`,
+              ip_address: req.ip,
+              user_agent: req.headers['user-agent']
+            });
+            
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+        })
+        .on('error', (error) => {
+          reject(error);
+        });
+    });
+    
+    await processFile;
+    
+    // Return results
+    return res.status(200).json(results);
+    
+  } catch (error) {
+    console.error('Error processing bulk users:', error);
+    return res.status(500).json({ error: 'Failed to process bulk user upload' });
+  }
+});
+
+/**
+ * Process a single user row from the CSV file
+ * @param {Object} row - The CSV row data
+ * @param {Object} db - Database connection
+ * @param {Object} results - Results tracking object
+ * @param {Object} eventBus - Event bus for logging
+ * @param {number} createdBy - User ID of the creator
+ */
+async function processUserRow(row, db, results, eventBus, createdBy) {
+  try {
+    // Validate required fields
+    if (!row.firstName || !row.lastName || !row.email || !row.password || !row.roles) {
+      results.failed++;
+      results.errors.push({
+        row: results.total,
+        email: row.email || 'Unknown',
+        message: 'Missing required fields'
+      });
+      return;
+    }
+    
+    // Check if email already exists
+    const existingUser = await dbMethods.get(db, 
+      'SELECT user_id FROM users_master WHERE email = ?', 
+      [row.email]
+    );
+    
+    if (existingUser) {
+      results.failed++;
+      results.errors.push({
+        row: results.total,
+        email: row.email,
+        message: 'Email already exists'
+      });
+      return;
+    }
+    
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(row.password, salt);
+    
+    // Parse isActive value
+    const isActive = row.isActive ? row.isActive.toLowerCase() === 'true' : true;
+    
+    // Create user
+    const result = await dbMethods.run(db, 
+      `INSERT INTO users_master (first_name, last_name, email, mobile_number, password_hash, is_active) 
+       VALUES (?, ?, ?, ?, ?, ?)`, 
+      [row.firstName, row.lastName, row.email, row.email, hashedPassword, isActive ? 1 : 0]
+    );
+    
+    const newUserId = result.lastID;
+    
+    // Process roles
+    const roleNames = row.roles.split(',').map(role => role.trim());
+    
+    // Find role IDs from role names
+    for (const roleName of roleNames) {
+      const roleRecord = await dbMethods.get(db, 
+        'SELECT role_id FROM roles_master WHERE name = ?', 
+        [roleName]
+      );
+      
+      if (roleRecord) {
+        await dbMethods.run(db, 
+          'INSERT INTO user_roles_tx (user_id, role_id) VALUES (?, ?)',
+          [newUserId, roleRecord.role_id]
+        );
+      } else {
+        console.warn(`Role '${roleName}' not found for user ${row.email}`);
+      }
+    }
+    
+    // Emit user created event
+    eventBus.emit('user:created', {
+      user_id: newUserId,
+      email: row.email,
+      created_by: createdBy
+    });
+    
+    results.successful++;
+    
+  } catch (error) {
+    console.error(`Error processing user ${row.email}:`, error);
+    results.failed++;
+    results.errors.push({
+      row: results.total,
+      email: row.email || 'Unknown',
+      message: error.message || 'Unknown error'
+    });
+  }
+}
+
+module.exports = {
+  router,
+  init
+};

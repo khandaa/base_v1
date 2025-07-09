@@ -21,6 +21,7 @@ const UserList = () => {
   const canCreateUser = hasPermission(['user_create']);
   const canEditUser = hasPermission(['user_update']);
   const canDeleteUser = hasPermission(['user_delete']);
+  const canBulkUpload = hasPermission(['user_create']);
 
   useEffect(() => {
     fetchUsers();
@@ -106,14 +107,27 @@ const UserList = () => {
         </Col>
         <Col md={6} className="text-md-end">
           {canCreateUser && (
-            <Button 
-              variant="primary" 
-              as={Link} 
-              to="/users/create"
-              className="d-inline-flex align-items-center"
-            >
-              <FaPlus className="me-2" /> Add New User
-            </Button>
+            <div className="d-flex gap-2 justify-content-end">
+              <Button 
+                variant="primary" 
+                as={Link} 
+                to="/users/create"
+                className="d-inline-flex align-items-center"
+              >
+                <FaPlus className="me-2" /> Add New User
+              </Button>
+              
+              {canBulkUpload && (
+                <Button 
+                  variant="outline-primary" 
+                  as={Link} 
+                  to="/users/bulk-upload"
+                  className="d-inline-flex align-items-center"
+                >
+                  <FaPlus className="me-2" /> Bulk Upload
+                </Button>
+              )}
+            </div>
           )}
         </Col>
       </Row>

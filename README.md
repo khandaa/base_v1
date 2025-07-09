@@ -44,6 +44,9 @@ base_v1/
 - User dashboard with activity metrics
 - Administrative interface with comprehensive controls
 - User, role, and permission management
+  - Individual user creation and editing
+  - Bulk user upload via CSV file
+  - CSV template download for easy onboarding
 - System activity logging and monitoring
 - Permission-based UI components
 
@@ -64,48 +67,57 @@ base_v1/
 ### Installation
 
 1. Clone the repository
-2. Install backend dependencies:
+2. Install all dependencies using the provided script:
    ```
-   cd backend
-   npm install
+   npm run install:all
    ```
-3. Install frontend dependencies:
-   ```
-   cd frontend
-   npm install
-   ```
+   This will install both frontend and backend dependencies.
 
 ### Running the Application
 
-1. Start the backend server:
+1. Start both backend and frontend concurrently:
    ```
-   cd backend
    npm run start
    ```
+   This will start the backend API on port 5000 and the frontend on port 3000.
 
-2. Start the frontend development server:
+### Using the Virtual Environment (for Python modules)
+
+The project uses a Python virtual environment for certain backend modules:
+
+1. Activate the virtual environment:
    ```
-   cd frontend
-   npm start
+   source /Users/alokk/EmployDEX/Applications/venv/bin/activate
    ```
 
-### Default Credentials
+2. Install any required Python dependencies within the activated environment.
 
-#### Admin User
+### Default Access Credentials
+
+#### Administrator User
+Use the following credentials to log in as an administrator:
+
+- Username: admin
 - Email: admin@employdex.com
-- Mobile/Username: 9999999999
 - Password: Admin@123
 
 The admin user has full permissions to manage users, roles, and permissions in the system.
 
-#### Full Access User (FA)
+#### Full Access User
+- Username: fa
 - Email: fa@employdex.com
-- Mobile/Username: 8888888888
 - Password: User@123
 
 The FA user has been assigned the "full_access" role which grants all available permissions in the system. This user can be used for testing and validation purposes.
 
 **Note:** The login has been updated to accept either email, username, or mobile number. You can log in with any of these credentials.
+
+### Access Information
+
+After starting the application:
+
+- Backend API: http://localhost:5000
+- Frontend application: http://localhost:3000
 
 ### Demo Users
 

@@ -20,6 +20,7 @@ import UserList from './components/users/UserList';
 import UserDetails from './components/users/UserDetails';
 import UserCreate from './components/users/UserCreate';
 import UserEdit from './components/users/UserEdit';
+import UserBulkUpload from './components/users/UserBulkUpload';
 
 // Role Management Components
 import RoleList from './components/roles/RoleList';
@@ -72,6 +73,7 @@ function App() {
           <Route path=":id" element={<UserDetails />} />
           <Route path="create" element={<UserCreate />} />
           <Route path="edit/:id" element={<UserEdit />} />
+          <Route path="bulk-upload" element={<UserBulkUpload />} />
         </Route>
         
         {/* Role Management Routes */}
