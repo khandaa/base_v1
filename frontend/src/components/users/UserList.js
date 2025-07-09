@@ -379,10 +379,7 @@ const UserList = () => {
           )}
         </Card.Body>
       </Card>
-    </Container>
-  );
-};
-
+      
       {/* Role Edit Modal */}
       <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)}>
         <Modal.Header closeButton>
@@ -453,5 +450,8 @@ const UserList = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+    </Container>
+  );
+};
 
 export default UserList;
