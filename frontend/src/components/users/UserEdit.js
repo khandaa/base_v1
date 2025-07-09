@@ -97,7 +97,7 @@ const UserEdit = () => {
         first_name: values.firstName,
         last_name: values.lastName,
         email: values.email,
-        role_ids: values.roleIds,
+        roles: values.roleIds, // Changed from role_ids to roles to match backend API
         is_active: values.isActive
       };
       

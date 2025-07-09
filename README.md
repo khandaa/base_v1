@@ -45,6 +45,7 @@ base_v1/
 - Administrative interface with comprehensive controls
 - User, role, and permission management
   - Individual user creation and editing
+  - Role management directly from user edit page
   - Bulk user upload via CSV file
   - CSV template download for easy onboarding
 - System activity logging and monitoring
