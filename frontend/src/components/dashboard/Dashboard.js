@@ -240,7 +240,7 @@ const Dashboard = () => {
         <Col md={3}>
           <Card 
             className="stat-card bg-info text-white"
-            onClick={() => navigate('/activity')} 
+            onClick={() => navigate('/logs')} 
             style={{ cursor: 'pointer' }}
           >
             <Card.Body>

@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Users card now navigates to users page
   - Roles card now navigates to roles page
   - Permissions card now navigates to permissions page
-  - Activities card now navigates to activity page
+  - Activities card now navigates to logs page
   - Added visual cursor pointer indicator for better UX
 
 ## [0.2.10] - 2025-07-09
