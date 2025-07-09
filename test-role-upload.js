@@ -38,7 +38,8 @@ async function downloadTemplate(token) {
     const response = await axios.get(`${API_URL}/role_management/roles/template`, {
       headers: {
         Authorization: `Bearer ${token}`
-      }
+      },
+      responseType: 'text'
     });
     console.log('Template download successful:', response.data);
     return true;
