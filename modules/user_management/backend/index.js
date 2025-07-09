@@ -793,7 +793,9 @@ async function processUserRow(row, db, results, eventBus, createdBy) {
   }
 }
 
-module.exports = {
-  router,
-  init
-};
+// Initialize module when imported
+if (router && router.init) {
+  router.init = init;
+}
+
+module.exports = router;
