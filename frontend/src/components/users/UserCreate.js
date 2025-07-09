@@ -75,7 +75,8 @@ const UserCreate = () => {
         last_name: values.lastName,
         email: values.email,
         password: values.password,
-        role_ids: values.roleIds,
+        mobile_number: values.email, // Add mobile_number field as required by backend
+        roles: values.roleIds,       // Changed from role_ids to roles to match backend expectation
         is_active: values.isActive
       };
 

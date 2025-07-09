@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added robust response structure handling to properly extract roles data
   - Improved error handling and logging for API responses
   - Fixed data access pattern to handle both flat and nested response structures
+- Fixed user creation functionality
+  - Updated field name from `role_ids` to `roles` to match backend expectations
+  - Added required `mobile_number` field to user creation payload
+  - Improved error handling for user creation API calls
 
 ## [0.2.12] - 2025-07-09
 ### Added
