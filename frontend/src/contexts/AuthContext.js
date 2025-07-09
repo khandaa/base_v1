@@ -4,9 +4,36 @@ import axios from 'axios';
 import { setAuthToken } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
-const AuthContext = createContext();
+const AuthContext = createContext({
+  currentUser: null,
+  token: null,
+  isAuthenticated: false,
+  permissions: [],
+  roles: [],
+  isLoading: false,
+  login: () => Promise.reject('Auth context not initialized'),
+  logout: () => {},
+  hasPermission: () => false
+});
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    console.warn('useAuth() was called outside of AuthProvider context');
+    return {
+      currentUser: null,
+      token: null,
+      isAuthenticated: false,
+      permissions: [],
+      roles: [],
+      isLoading: false,
+      login: () => Promise.reject('Auth context not initialized'),
+      logout: () => {},
+      hasPermission: () => false
+    };
+  }
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -175,12 +202,21 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Helper method to check if user has specific permissions
+  // Helper method to check if user has required permissions
   const hasPermission = (requiredPermissions) => {
-    if (!requiredPermissions || requiredPermissions.length === 0) return true;
-    if (!permissions || permissions.length === 0) return false;
+    // Handle null/empty permissions
+    if (!requiredPermissions || requiredPermissions.length === 0) {
+      return true; // No permissions required
+    }
     
-    return requiredPermissions.some(permission => permissions.includes(permission));
+    // Safely check if user has any of the required permissions
+    if (!permissions || !Array.isArray(permissions)) {
+      return false; // No permissions available
+    }
+    
+    return requiredPermissions.some(permission => 
+      permissions.includes(permission)
+    );
   };
 
   // Helper method to check if user has specific roles

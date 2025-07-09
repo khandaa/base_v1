@@ -8,7 +8,9 @@ import { loggingAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 const ActivityLogs = () => {
-  const { hasPermission, currentUser } = useAuth();
+  // Safely access auth context with fallbacks to prevent null reference errors
+  const auth = useAuth() || {};
+  const { hasPermission = () => false, currentUser = null } = auth;
   const userRoles = currentUser?.roles || [];
   
   const [logs, setLogs] = useState([]);
@@ -25,8 +27,9 @@ const ActivityLogs = () => {
   const [entityTypes, setEntityTypes] = useState([]);
   const [actionTypes, setActionTypes] = useState([]);
   
-  const canViewLogs = hasPermission(['activity_view']) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
-  const canExportLogs = hasPermission(['activity_export']) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
+  // Safely check permissions with fallbacks
+  const canViewLogs = (typeof hasPermission === 'function' && hasPermission(['activity_view'])) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
+  const canExportLogs = (typeof hasPermission === 'function' && hasPermission(['activity_export'])) || userRoles.some(role => ['Admin', 'full_access'].includes(role));
   
   // Pagination settings
   const logsPerPage = 10;

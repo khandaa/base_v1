@@ -14,8 +14,10 @@ const PermissionList = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
   
-  const { hasPermission } = useAuth();
-  const canViewPermissions = hasPermission(['permission_view']);
+  // Safely access auth context with fallbacks to prevent null reference errors
+  const auth = useAuth() || {};
+  const { hasPermission = () => false } = auth;
+  const canViewPermissions = typeof hasPermission === 'function' && hasPermission(['permission_view']);
 
   // Fetch permissions on component load
   useEffect(() => {
