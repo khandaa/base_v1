@@ -131,8 +131,136 @@ router.get('/roles', authenticateToken, checkPermissions(['role_view']), async (
 });
 
 /**
+ * @route GET /api/role_management/roles/template
+ * @description Download a CSV template for bulk role upload
+ * @access Private - Requires role_create permission
+ */
+router.get('/roles/template', [
+  authenticateToken,
+  checkPermissions(['role_create'])
+], (req, res) => {
+  try {
+    // Set headers for CSV download
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename=role-template.csv');
+    
+    // Create CSV template with header and example row
+    const csvContent = 'name,description,permissions\n' +
+                      'Example Role,Example description for role,permission1;permission2;permission3\n';
+    
+    // Log template download activity
+    const eventBus = req.app.locals.eventBus;
+    if (eventBus) {
+      eventBus.emit('log:activity', {
+        user_id: req.user.user_id,
+        action: 'DOWNLOAD_TEMPLATE',
+        details: 'Downloaded role CSV template',
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+        resource_type: 'role',
+        module: 'role_management'
+      });
+    }
+    
+    res.send(csvContent);
+  } catch (error) {
+    console.error('Error generating role template:', error);
+    res.status(500).json({ error: 'Failed to generate template' });
+  }
+});
+
+/**
+ * @route POST /api/role_management/roles/bulk
+ * @description Upload and process multiple roles from CSV file
+ * @access Private - Requires role_create permission
+ */
+router.post('/roles/bulk', [
+  authenticateToken,
+  checkPermissions(['role_create']),
+  upload.single('file')
+], async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    const db = req.app.locals.db;
+    const eventBus = req.app.locals.eventBus;
+    const userId = req.user.user_id;
+    
+    // Results tracking
+    const results = {
+      total: 0,
+      success: 0,
+      failed: 0,
+      errors: [],
+      created: []
+    };
+    
+    // Create a promise to process the CSV file
+    const processFile = new Promise((resolve, reject) => {
+      const stream = fs.createReadStream(req.file.path)
+        .pipe(csv())
+        .on('data', async (row) => {
+          // Pause the stream while processing this row
+          stream.pause();
+          results.total++;
+          
+          try {
+            await processRoleRow(row, db, results, eventBus, userId);
+          } catch (error) {
+            results.failed++;
+            results.errors.push({
+              row: results.total,
+              name: row.name || 'Unknown',
+              error: error.message
+            });
+          } finally {
+            // Resume the stream to process next row
+            stream.resume();
+          }
+        })
+        .on('end', () => {
+          // Clean up the uploaded file
+          fs.unlink(req.file.path, (err) => {
+            if (err) console.error('Error deleting temp file:', err);
+          });
+          resolve();
+        })
+        .on('error', (error) => {
+          reject(error);
+        });
+    });
+    
+    // Wait for all rows to be processed
+    await processFile;
+    
+    // Log bulk upload activity
+    if (eventBus) {
+      eventBus.emit('log:activity', {
+        user_id: userId,
+        action: 'BULK_UPLOAD',
+        details: `Bulk uploaded ${results.total} roles, ${results.success} succeeded, ${results.failed} failed`,
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent'],
+        resource_type: 'role',
+        module: 'role_management'
+      });
+    }
+    
+    res.status(200).json({
+      message: 'Bulk upload completed',
+      results
+    });
+  } catch (error) {
+    console.error('Error processing bulk upload:', error);
+    res.status(500).json({ error: 'Failed to process bulk upload' });
+  }
+});
+
+/**
  * @route GET /api/role_management/roles/:id
- * @description Get role by ID
+ * @description Get a specific role by ID
  * @access Private - Requires role_view permission
  */
 router.get('/roles/:id', authenticateToken, checkPermissions(['role_view']), async (req, res) => {
@@ -459,139 +587,6 @@ router.delete('/roles/:id', authenticateToken, checkPermissions(['role_delete'])
 });
 
 // Export router and init function
-/**
- * @route GET /api/role_management/roles/template
- * @description Download a CSV template for bulk role upload
- * @access Private - Requires role_create permission
- */
-router.get('/roles/template', [
-  authenticateToken,
-  checkPermissions(['role_create'])
-], (req, res) => {
-  try {
-    // Set headers for CSV download
-    res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', 'attachment; filename=role-template.csv');
-    
-    // Create CSV template with header and example row
-    const csvContent = 'name,description,permissions\n' +
-                      'Example Role,Example description for role,permission1;permission2;permission3\n';
-    
-    // Log template download activity
-    const eventBus = req.app.locals.eventBus;
-    if (eventBus) {
-      eventBus.emit('log:activity', {
-        user_id: req.user.user.id,
-        action: 'DOWNLOAD_TEMPLATE',
-        details: 'Downloaded role CSV template',
-        ip_address: req.ip,
-        user_agent: req.headers['user-agent'],
-        resource_type: 'role',
-        module: 'role_management'
-      });
-    }
-    
-    res.send(csvContent);
-  } catch (error) {
-    console.error('Error generating role template:', error);
-    res.status(500).json({ error: 'Failed to generate template' });
-  }
-});
-
-/**
- * @route POST /api/role_management/roles/bulk
- * @description Upload and process multiple roles from CSV file
- * @access Private - Requires role_create permission
- */
-router.post('/roles/bulk', [
-  authenticateToken,
-  checkPermissions(['role_create']),
-  upload.single('file')
-], async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    
-    const db = req.app.locals.db;
-    const eventBus = req.app.locals.eventBus;
-    const userId = req.user.user.id;
-    
-    // Results tracking
-    const results = {
-      total: 0,
-      success: 0,
-      failed: 0,
-      errors: [],
-      created: []
-    };
-    
-    // Create a promise to process the CSV file
-    const processFile = new Promise((resolve, reject) => {
-      const rows = [];
-      fs.createReadStream(req.file.path)
-        .pipe(csv())
-        .on('data', (row) => {
-          rows.push(row);
-        })
-        .on('end', () => {
-          results.total = rows.length;
-          resolve(rows);
-        })
-        .on('error', (error) => {
-          reject(error);
-        });
-    });
-    
-    // Process each row
-    const rows = await processFile;
-    
-    for (const row of rows) {
-      try {
-        await processRoleRow(row, db, results, eventBus, userId);
-      } catch (err) {
-        console.error('Error processing role row:', err);
-        results.failed++;
-        results.errors.push({
-          row: JSON.stringify(row),
-          error: err.message
-        });
-      }
-    }
-    
-    // Delete the uploaded file after processing
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.error('Error deleting uploaded file:', err);
-    });
-    
-    // Log bulk upload activity
-    if (eventBus) {
-      eventBus.emit('log:activity', {
-        user_id: userId,
-        action: 'BULK_CREATE',
-        details: `Bulk uploaded ${results.success} roles, ${results.failed} failed`,
-        ip_address: req.ip,
-        user_agent: req.headers['user-agent'],
-        resource_type: 'role',
-        module: 'role_management'
-      });
-    }
-    
-    res.status(200).json({
-      message: 'Bulk role upload completed',
-      results: {
-        total: results.total,
-        success: results.success,
-        failed: results.failed,
-        created: results.created,
-        errors: results.errors
-      }
-    });
-  } catch (error) {
-    console.error('Bulk role upload error:', error);
-    res.status(500).json({ error: 'Failed to process bulk role upload' });
-  }
-});
 
 /**
  * Process a single role row from the CSV file
