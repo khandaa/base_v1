@@ -17,10 +17,18 @@ const RoleCreate = () => {
     const fetchPermissions = async () => {
       try {
         const response = await permissionAPI.getPermissions();
-        setPermissions(response.data);
+        // Handle the nested structure where permissions are in response.data.permissions
+        if (response.data && response.data.permissions) {
+          setPermissions(response.data.permissions);
+        } else {
+          console.error('Unexpected API response format:', response.data);
+          toast.error('Failed to load permissions: unexpected data format');
+          setPermissions([]);
+        }
       } catch (error) {
         console.error('Error fetching permissions:', error);
         toast.error('Failed to load permissions');
+        setPermissions([]);
       }
     };
 
@@ -28,14 +36,14 @@ const RoleCreate = () => {
   }, []);
 
   // Group permissions by category
-  const groupedPermissions = permissions.reduce((acc, permission) => {
+  const groupedPermissions = Array.isArray(permissions) ? permissions.reduce((acc, permission) => {
     const category = permission.name.split('_')[0]; // Assuming permissions are named like "user_create"
     if (!acc[category]) {
       acc[category] = [];
     }
     acc[category].push(permission);
     return acc;
-  }, {});
+  }, {}) : {};
 
   // Validation schema
   const validationSchema = Yup.object({

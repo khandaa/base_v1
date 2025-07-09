@@ -622,8 +622,8 @@ async function processRoleRow(row, db, results, eventBus, createdBy) {
   try {
     // Create the role
     const result = await dbMethods.run(db, 
-      'INSERT INTO roles_master (name, description, created_by) VALUES (?, ?, ?)', 
-      [name, description, createdBy]
+      'INSERT INTO roles_master (name, description) VALUES (?, ?)', 
+      [name, description]
     );
     
     const roleId = result.lastID;

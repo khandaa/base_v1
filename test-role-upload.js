@@ -8,7 +8,7 @@ const csvFilePath = path.join(__dirname, 'role-upload-sample.csv');
 
 // Admin credentials
 const credentials = {
-  username: 'admin@employdex.com',
+  username: 'admin',
   password: 'Admin@123'
 };
 
@@ -71,7 +71,7 @@ async function uploadRoles(token) {
       }
     });
     
-    console.log('Bulk upload response:', response.data);
+    console.log('Bulk upload response:', JSON.stringify(response.data, null, 2));
     return true;
   } catch (error) {
     console.error('Bulk upload error:', error.response?.data || error.message);

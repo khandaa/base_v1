@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.17] - 2025-07-09
+### Fixed
+- Fixed bulk role upload functionality issues
+  - Fixed "permissions.reduce is not a function" error in RoleCreate component by adding Array type check
+  - Removed non-existent `created_by` column from role creation SQL query to match database schema
+  - Fixed template download and bulk upload endpoints by correctly ordering Express routes
+  - Updated test scripts to use correct admin credentials
+  - Fixed permissions not loading in RoleCreate component by correctly handling nested API response structure
+
 ## [0.2.16] - 2025-07-09
 ### Added
 - Implemented bulk role upload functionality
