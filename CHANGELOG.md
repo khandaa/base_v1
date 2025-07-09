@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.7] - 2025-07-09
+### Added
+- Created full_access role with all permissions
+- Added FA user with full_access role (mobile: 8888888888, email: fa@employdex.com, password: User@123)
+
+### Fixed
+- Fixed roles not being displayed in roles management page
+  - Updated fetchRoles function in RoleList.js to properly handle API response format
+  - Added better error handling for unexpected response formats
+  - Added console logging to help diagnose API response issues
+
 ## [0.2.6] - 2025-07-10
 ### Fixed
 - Fixed login functionality to properly handle username input

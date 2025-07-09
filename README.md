@@ -89,15 +89,23 @@ base_v1/
    npm start
    ```
 
-### Default Admin Credentials
+### Default Credentials
 
+#### Admin User
 - Email: admin@employdex.com
 - Mobile/Username: 9999999999
 - Password: Admin@123
 
 The admin user has full permissions to manage users, roles, and permissions in the system.
 
-**Note:** The login has been updated to accept either email or mobile number. You can log in with either credential.
+#### Full Access User (FA)
+- Email: fa@employdex.com
+- Mobile/Username: 8888888888
+- Password: User@123
+
+The FA user has been assigned the "full_access" role which grants all available permissions in the system. This user can be used for testing and validation purposes.
+
+**Note:** The login has been updated to accept either email, username, or mobile number. You can log in with any of these credentials.
 
 ### Demo Users
 

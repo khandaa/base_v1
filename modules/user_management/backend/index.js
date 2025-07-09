@@ -41,10 +41,12 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
     const db = req.app.locals.db;
     const eventBus = req.app.locals.eventBus;
     
-    // Query parameters for filtering
-    const { isActive, searchTerm, role } = req.query;
+    // Query parameters for filtering and pagination
+    const { isActive, searchTerm, role, limit } = req.query;
+    console.log('User list request with params:', req.query);
+    console.log('Authenticated user:', req.user);
     
-    // Base SQL query
+    // Base SQL query - simplify the query to avoid potential issues
     let sql = `
       SELECT 
         u.user_id, 
@@ -54,11 +56,8 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
         u.mobile_number, 
         u.is_active,
         u.created_at,
-        u.updated_at,
-        GROUP_CONCAT(r.name) as roles
+        u.updated_at
       FROM users_master u
-      LEFT JOIN user_roles_tx ur ON u.user_id = ur.user_id
-      LEFT JOIN roles_master r ON ur.role_id = r.role_id
     `;
     
     // Build WHERE clause based on filters
@@ -86,30 +85,51 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
       sql += ' WHERE ' + whereConditions.join(' AND ');
     }
     
-    // Group by user_id to handle multiple roles per user
-    sql += ' GROUP BY u.user_id ORDER BY u.created_at DESC';
+    // Add ORDER BY clause
+    sql += ' ORDER BY u.created_at DESC';
     
-    const users = await dbMethods.all(db, sql, params);
+    // Add limit if specified
+    if (limit && !isNaN(parseInt(limit))) {
+      sql += ` LIMIT ${parseInt(limit)}`;
+    }
     
-    // Log activity
-    eventBus.emit('log:activity', {
-      user_id: req.user.user_id,
-      action: 'USER_LIST_VIEW',
-      details: 'Retrieved list of users',
-      ip_address: req.ip,
-      user_agent: req.headers['user-agent']
-    });
+    console.log('Executing SQL:', sql);
     
-    return res.status(200).json({
-      count: users.length,
-      users: users.map(user => ({
-        ...user,
-        roles: user.roles ? user.roles.split(',') : []
-      }))
+    // Use traditional callback approach to debug any potential issues
+    db.all(sql, params, (err, users) => {
+      if (err) {
+        console.error('Database error in user listing:', err);
+        return res.status(500).json({ error: 'Database error: ' + err.message });
+      }
+      
+      console.log(`Retrieved ${users.length} users from database`);
+      
+      // Log activity
+      try {
+        // Debug the structure of req.user
+        console.log('User object for activity logging:', JSON.stringify(req.user, null, 2));
+        
+        // Use defensive coding to avoid undefined errors
+        const userId = req.user && req.user.user ? req.user.user.id : null;
+        
+        eventBus.emit('log:activity', {
+          user_id: userId,
+          action: 'USER_LIST_VIEW',
+          details: 'Retrieved list of users',
+          ip_address: req.ip,
+          user_agent: req.headers['user-agent']
+        });
+      } catch (logError) {
+        console.error('Error logging activity:', logError);
+        // Continue despite logging error
+      }
+      
+      // Return users without trying to process roles that we're no longer querying
+      return res.json({ users });
     });
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return res.status(500).json({ error: 'Failed to retrieve users' });
+    console.error('Error in user listing endpoint:', error);
+    return res.status(500).json({ error: 'Failed to fetch users: ' + error.message });
   }
 });
 

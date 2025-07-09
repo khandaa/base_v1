@@ -39,8 +39,21 @@ const RoleList = () => {
     try {
       setLoading(true);
       const response = await roleAPI.getRoles();
-      setRoles(response.data);
-      setFilteredRoles(response.data);
+      console.log('Roles API response:', response.data);
+      if (response.data && response.data.roles) {
+        // Backend returns { count, roles } structure
+        setRoles(response.data.roles);
+        setFilteredRoles(response.data.roles);
+      } else if (Array.isArray(response.data)) {
+        // Handle case where response might be an array directly
+        setRoles(response.data);
+        setFilteredRoles(response.data);
+      } else {
+        console.error('Unexpected response format:', response.data);
+        toast.error('Received invalid data format from server');
+        setRoles([]);
+        setFilteredRoles([]);
+      }
     } catch (error) {
       console.error('Error fetching roles:', error);
       toast.error('Failed to load roles. Please try again.');

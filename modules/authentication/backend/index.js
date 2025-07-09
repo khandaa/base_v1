@@ -315,71 +315,9 @@ router.post('/login', [
         processSuccessfulLogin(user, req, res, db, eventBus);
       }
     );
-            
-            // Extract roles and permissions from results
-            const roles = [...new Set(userRolesAndPermissions.map(item => item.role_name))];
-            const permissions = userRolesAndPermissions
-              .filter(item => item.permission_name)
-              .map(item => item.permission_name);
-            
-            // Create JWT payload
-            const payload = {
-              user: {
-                id: user.user_id,
-                email: user.email,
-                first_name: user.first_name,
-                last_name: user.last_name,
-                roles,
-                permissions
-              }
-            };
-            
-            // Sign token
-            jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN }, (err, token) => {
-              if (err) {
-                console.error('Error generating token:', err);
-                return res.status(500).json({ error: 'Failed to generate token' });
-              }
-              
-              // Log login event
-              db.run(
-                'INSERT INTO activity_logs_tx (user_id, action, details, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
-                [
-                  user.user_id,
-                  'LOGIN',
-                  'User logged in',
-                  req.ip,
-                  req.headers['user-agent']
-                ]
-              );
-              
-              // Emit login event
-              eventBus.emit('user:login', {
-                user_id: user.user_id,
-                email: user.email,
-                roles,
-                timestamp: new Date()
-              });
-              
-              res.json({
-                token,
-                user: {
-                  id: user.user_id,
-                  email: user.email,
-                  first_name: user.first_name,
-                  last_name: user.last_name,
-                  roles,
-                  permissions
-                }
-              });
-            });
-          }
-        );
-      }
-    );
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    return res.status(500).json({ error: 'Login failed' });
   }
 });
 
