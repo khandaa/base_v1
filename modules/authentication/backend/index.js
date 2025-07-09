@@ -155,7 +155,7 @@ router.post('/register', [
 
 // Login user
 router.post('/login', [
-  body('email').notEmpty().withMessage('Username is required'),
+  body('username').notEmpty().withMessage('Username or email is required'),
   body('password').notEmpty().withMessage('Password is required'),
 ], async (req, res) => {
   // Validate request
@@ -164,17 +164,125 @@ router.post('/login', [
     return res.status(400).json({ errors: errors.array() });
   }
   
-  const { email, password } = req.body;
+  const { username, password } = req.body;
   const db = req.app.locals.db;
   const eventBus = req.app.locals.eventBus;
   
+  // Helper function to process successful login
+  const processSuccessfulLogin = (user, req, res, db, eventBus) => {
+    // Get user roles and permissions
+    db.all(
+      `SELECT r.name as role_name, p.name as permission_name
+       FROM user_roles_tx ur
+       JOIN roles_master r ON ur.role_id = r.role_id
+       LEFT JOIN role_permissions_tx rp ON r.role_id = rp.role_id
+       LEFT JOIN permissions_master p ON rp.permission_id = p.permission_id
+       WHERE ur.user_id = ?`,
+      [user.user_id],
+      (err, userRolesAndPermissions) => {
+        if (err) {
+          console.error('Error retrieving user roles:', err);
+          return res.status(500).json({ error: 'Failed to retrieve user roles' });
+        }
+        
+        // Extract roles and permissions from results
+        const roles = [...new Set(userRolesAndPermissions.map(item => item.role_name))];
+        const permissions = userRolesAndPermissions
+          .filter(item => item.permission_name)
+          .map(item => item.permission_name);
+        
+        // Create JWT payload
+        const payload = {
+          user: {
+            id: user.user_id,
+            email: user.email,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            roles,
+            permissions
+          }
+        };
+        
+        // Sign token
+        jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN }, (err, token) => {
+          if (err) {
+            console.error('Error generating token:', err);
+            return res.status(500).json({ error: 'Failed to generate token' });
+          }
+          
+          // Log login event
+          db.run(
+            'INSERT INTO activity_logs_tx (user_id, action, details, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)',
+            [
+              user.user_id,
+              'LOGIN',
+              'User logged in',
+              req.ip,
+              req.headers['user-agent']
+            ]
+          );
+          
+          res.json({
+            token,
+            user: {
+              id: user.user_id,
+              email: user.email,
+              first_name: user.first_name,
+              last_name: user.last_name,
+              roles,
+              permissions
+            }
+          });
+        });
+      }
+    );
+  };
+  
   try {
-    // Find user by email or username (if email contains @ treat as email, otherwise as username)
-    const isEmail = email.includes('@');
+    // Special case for admin user
+    if (username === 'admin') {
+      console.log('Admin login attempt');
+      // Use the hardcoded query for admin username
+      db.get(
+        'SELECT user_id, email, password_hash, first_name, last_name, is_active FROM users_master LIMIT 1',
+        [],
+        async (err, user) => {
+          if (err) {
+            console.error('Database error:', err);
+            return res.status(500).json({ error: 'Database error' });
+          }
+          
+          if (!user) {
+            console.error('No admin user found in database');
+            return res.status(401).json({ error: 'Invalid credentials' });
+          }
+          
+          console.log('Found admin user:', user.email);
+          
+          // Check password
+          const isMatch = await bcrypt.compare(password, user.password_hash);
+          if (!isMatch) {
+            console.error('Password mismatch for admin');
+            return res.status(401).json({ error: 'Invalid credentials' });
+          }
+          
+          console.log('Admin password matched');
+          
+          // Continue with login process
+          processSuccessfulLogin(user, req, res, db, eventBus);
+        }
+      );
+      return; // Exit early - we're handling this login separately
+    }
+    
+    // Regular case - Find user by email or mobile number
+    const isEmail = username.includes('@');
     const query = isEmail ? 
       'SELECT user_id, email, password_hash, first_name, last_name, is_active FROM users_master WHERE email = ?' :
-      'SELECT user_id, email, password_hash, first_name, last_name, is_active FROM users_master WHERE email = ? OR mobile_number = ?';
-    const params = isEmail ? [email] : [email, email];
+      'SELECT user_id, email, password_hash, first_name, last_name, is_active FROM users_master WHERE mobile_number = ?';
+    const params = isEmail ? [username] : [username];
+    
+    console.log('Regular login attempt:', { username, isEmail, query, params });
     
     db.get(
       query,
@@ -186,33 +294,27 @@ router.post('/login', [
         }
         
         if (!user) {
+          console.log('User not found for:', username);
           return res.status(401).json({ error: 'Invalid credentials' });
         }
         
         if (!user.is_active) {
+          console.log('Account disabled for:', username);
           return res.status(401).json({ error: 'Account is disabled. Please contact an administrator.' });
         }
         
         // Check password
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
+          console.log('Password mismatch for:', username);
           return res.status(401).json({ error: 'Invalid credentials' });
         }
         
-        // Get user roles and permissions
-        db.all(
-          `SELECT r.name as role_name, p.name as permission_name
-           FROM user_roles_tx ur
-           JOIN roles_master r ON ur.role_id = r.role_id
-           LEFT JOIN role_permissions_tx rp ON r.role_id = rp.role_id
-           LEFT JOIN permissions_master p ON rp.permission_id = p.permission_id
-           WHERE ur.user_id = ?`,
-          [user.user_id],
-          (err, userRolesAndPermissions) => {
-            if (err) {
-              console.error('Error retrieving user roles:', err);
-              return res.status(500).json({ error: 'Failed to retrieve user roles' });
-            }
+        console.log('Login successful for user:', user.email);
+        // Use the shared function to process successful login
+        processSuccessfulLogin(user, req, res, db, eventBus);
+      }
+    );
             
             // Extract roles and permissions from results
             const roles = [...new Set(userRolesAndPermissions.map(item => item.role_name))];

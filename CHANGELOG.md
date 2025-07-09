@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.6] - 2025-07-10
+### Fixed
+- Fixed login functionality to properly handle username input
+  - Updated frontend form field from 'email' to 'username'
+  - Modified backend validation to accept 'username' parameter
+  - Fixed API request payload format to match backend expectations
+  - Resolved 400 Bad Request error during login
+
 ## [0.2.5] - 2025-07-09
 ### Changed
 - Modified login process to support username instead of email

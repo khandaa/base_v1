@@ -92,9 +92,12 @@ base_v1/
 ### Default Admin Credentials
 
 - Email: admin@employdex.com
-- Password: Admin@321
+- Mobile/Username: 9999999999
+- Password: Admin@123
 
 The admin user has full permissions to manage users, roles, and permissions in the system.
+
+**Note:** The login has been updated to accept either email or mobile number. You can log in with either credential.
 
 ### Demo Users
 

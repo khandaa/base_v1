@@ -18,7 +18,7 @@ const Login = () => {
 
   // Validation schema for login form
   const validationSchema = Yup.object({
-    email: Yup.string()
+    username: Yup.string()
       .required('Username is required'),
     password: Yup.string()
       .required('Password is required')
@@ -29,7 +29,7 @@ const Login = () => {
       setLoginError('');
       setLoading(true);
       
-      const result = await login(values.email, values.password);
+      const result = await login(values.username, values.password);
       
       if (result.success) {
         navigate(from);
@@ -59,7 +59,7 @@ const Login = () => {
                 {loginError && <Alert variant="danger">{loginError}</Alert>}
                 
                 <Formik
-                  initialValues={{ email: '', password: '' }}
+                  initialValues={{ username: '', password: '' }}
                   validationSchema={validationSchema}
                   onSubmit={handleSubmit}
                 >
@@ -80,15 +80,15 @@ const Login = () => {
                         </Form.Label>
                         <Form.Control
                           type="text"
-                          name="email"
+                          name="username"
                           placeholder="Enter username"
-                          value={values.email}
+                          value={values.username}
                           onChange={handleChange}
                           onBlur={handleBlur}
-                          isInvalid={touched.email && errors.email}
+                          isInvalid={touched.username && errors.username}
                         />
                         <Form.Control.Feedback type="invalid">
-                          {errors.email}
+                          {errors.username}
                         </Form.Control.Feedback>
                       </Form.Group>
                       

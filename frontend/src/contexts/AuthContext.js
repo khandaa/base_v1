@@ -67,9 +67,9 @@ export const AuthProvider = ({ children }) => {
     verifyToken();
   }, [token]);
 
-  const login = async (email, password) => {
+  const login = async (username, password) => {
     try {
-      const response = await axios.post('/api/authentication/login', { email, password });
+      const response = await axios.post('/api/authentication/login', { username, password });
       const { token: newToken, user } = response.data;
       
       console.log('Login successful, received token:', newToken);
