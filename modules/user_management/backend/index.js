@@ -42,11 +42,14 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
     const eventBus = req.app.locals.eventBus;
     
     // Query parameters for filtering and pagination
-    const { isActive, searchTerm, role, limit } = req.query;
+    const { isActive, searchTerm, role, limit, page = 1 } = req.query;
+    const pageSize = parseInt(limit) || 10;
+    const offset = (parseInt(page) - 1) * pageSize;
+    
     console.log('User list request with params:', req.query);
     console.log('Authenticated user:', req.user);
     
-    // Base SQL query - simplify the query to avoid potential issues
+    // Base SQL query - fetch users first
     let sql = `
       SELECT 
         u.user_id, 
@@ -75,57 +78,67 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
       params.push(searchPattern, searchPattern, searchPattern);
     }
     
-    if (role) {
-      whereConditions.push('r.name = ?');
-      params.push(role);
-    }
-    
     // Add WHERE clause if conditions exist
     if (whereConditions.length > 0) {
       sql += ' WHERE ' + whereConditions.join(' AND ');
     }
     
-    // Add ORDER BY clause
-    sql += ' ORDER BY u.created_at DESC';
+    // Count total users for pagination
+    const countSql = `SELECT COUNT(*) as total FROM (${sql})`;
+    const countResult = await dbMethods.get(db, countSql, params);
+    const total = countResult.total;
     
-    // Add limit if specified
-    if (limit && !isNaN(parseInt(limit))) {
-      sql += ` LIMIT ${parseInt(limit)}`;
-    }
+    // Add ORDER BY and LIMIT for pagination
+    sql += ' ORDER BY u.created_at DESC';
+    sql += ` LIMIT ${pageSize} OFFSET ${offset}`;
     
     console.log('Executing SQL:', sql);
     
-    // Use traditional callback approach to debug any potential issues
-    db.all(sql, params, (err, users) => {
-      if (err) {
-        console.error('Database error in user listing:', err);
-        return res.status(500).json({ error: 'Database error: ' + err.message });
-      }
+    // Get users
+    const users = await dbMethods.all(db, sql, params);
+    console.log(`Retrieved ${users.length} users from database`);
+    
+    // Fetch roles for each user
+    for (const user of users) {
+      const roles = await dbMethods.all(db, 
+        `SELECT r.role_id, r.name 
+         FROM roles_master r 
+         JOIN user_roles_tx ur ON r.role_id = ur.role_id 
+         WHERE ur.user_id = ?`,
+        [user.user_id]
+      );
       
-      console.log(`Retrieved ${users.length} users from database`);
+      user.roles = roles;
+    }
+    
+    // Log activity
+    try {
+      // Debug the structure of req.user
+      console.log('User object for activity logging:', JSON.stringify(req.user, null, 2));
       
-      // Log activity
-      try {
-        // Debug the structure of req.user
-        console.log('User object for activity logging:', JSON.stringify(req.user, null, 2));
-        
-        // Use defensive coding to avoid undefined errors
-        const userId = req.user && req.user.user ? req.user.user.id : null;
-        
-        eventBus.emit('log:activity', {
-          user_id: userId,
-          action: 'USER_LIST_VIEW',
-          details: 'Retrieved list of users',
-          ip_address: req.ip,
-          user_agent: req.headers['user-agent']
-        });
-      } catch (logError) {
-        console.error('Error logging activity:', logError);
-        // Continue despite logging error
-      }
+      // Use defensive coding to avoid undefined errors
+      const userId = req.user && req.user.user_id ? req.user.user_id : 
+                     (req.user && req.user.id ? req.user.id : null);
       
-      // Return users without trying to process roles that we're no longer querying
-      return res.json({ users });
+      eventBus.emit('log:activity', {
+        user_id: userId,
+        action: 'USER_LIST_VIEW',
+        details: 'Retrieved list of users',
+        ip_address: req.ip,
+        user_agent: req.headers['user-agent']
+      });
+    } catch (logError) {
+      console.error('Error logging activity:', logError);
+      // Continue despite logging error
+    }
+    
+    // Return users with roles and pagination info
+    return res.json({
+      users,
+      total,
+      page: parseInt(page),
+      limit: pageSize,
+      pages: Math.ceil(total / pageSize)
     });
   } catch (error) {
     console.error('Error in user listing endpoint:', error);

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.9] - 2025-07-09
+### Fixed
+- Fixed dashboard cards not showing correct counts for roles, permissions, and activities
+  - Updated Dashboard.js to properly access API response data structures
+  - Added proper data structure handling for role count, permission count, and activity count
+  - Fixed chart data mapping for activity logs and action types
+  - Added debugging information to help identify data structure issues
+
+## [0.2.8] - 2025-07-09
+### Fixed
+- Fixed role names not being visible in users page
+  - Updated user_management backend API to include roles data in user list response
+  - Improved user listing endpoint to properly fetch and return role information for each user
+  - Added better pagination support with total count, page size, and page number
+  - Enhanced error handling for user authentication in activity logging
+
 ## [0.2.7] - 2025-07-09
 ### Added
 - Created full_access role with all permissions

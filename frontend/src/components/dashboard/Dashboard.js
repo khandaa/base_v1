@@ -64,18 +64,26 @@ const Dashboard = () => {
         const logsResponse = await loggingAPI.getLogs({ limit: 10 });
         const statsResponse = await loggingAPI.getStats();
         
-        // Set stats
+        console.log('Dashboard data responses:', {
+          userResponse: userResponse.data,
+          roleResponse: roleResponse.data,
+          permissionResponse: permissionResponse.data,
+          statsResponse: statsResponse.data
+        });
+        
+        // Set stats with proper data access
         setStats({
-          userCount: userResponse.data.total || 0,
-          roleCount: roleResponse.data.length || 0,
-          permissionCount: permissionResponse.data.length || 0,
-          activityCount: statsResponse.data.total_activities || 0
+          userCount: userResponse.data?.total || 0,
+          roleCount: roleResponse.data?.count || (roleResponse.data?.roles ? roleResponse.data.roles.length : 0),
+          permissionCount: permissionResponse.data?.count || 
+                         (permissionResponse.data?.permissions ? permissionResponse.data.permissions.length : 0),
+          activityCount: statsResponse.data?.total_logs || 0
         });
         
         // Prepare activity data for charts
-        if (statsResponse.data.activity_by_day) {
-          const labels = statsResponse.data.activity_by_day.map(item => item.date);
-          const data = statsResponse.data.activity_by_day.map(item => item.count);
+        if (statsResponse.data?.daily_activity) {
+          const labels = statsResponse.data.daily_activity.map(item => item.date);
+          const data = statsResponse.data.daily_activity.map(item => item.count);
           
           setActivityData({
             labels,
@@ -93,9 +101,9 @@ const Dashboard = () => {
         }
         
         // Prepare action type data for charts
-        if (statsResponse.data.activity_by_action) {
-          const labels = statsResponse.data.activity_by_action.map(item => item.action_type);
-          const data = statsResponse.data.activity_by_action.map(item => item.count);
+        if (statsResponse.data?.action_counts) {
+          const labels = statsResponse.data.action_counts.map(item => item.action);
+          const data = statsResponse.data.action_counts.map(item => item.count);
           
           setActionTypeData({
             labels,

@@ -77,8 +77,16 @@ const PermissionList = () => {
     try {
       setLoading(true);
       const response = await permissionAPI.getPermissions();
-      setPermissions(response.data);
-      setFilteredPermissions(response.data);
+      // The backend returns data in the format { count, permissions }, so we need to access the permissions array
+      if (response.data && response.data.permissions) {
+        setPermissions(response.data.permissions);
+        setFilteredPermissions(response.data.permissions);
+      } else {
+        console.error('Unexpected response format:', response.data);
+        toast.error('Failed to load permissions: unexpected data format');
+        setPermissions([]);
+        setFilteredPermissions([]);
+      }
     } catch (error) {
       console.error('Error fetching permissions:', error);
       toast.error('Failed to load permissions. Please try again.');
