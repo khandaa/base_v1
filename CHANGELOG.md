@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.13] - 2025-07-09
+### Fixed
+- Fixed activity over time graph on dashboard not showing proper data
+  - Updated backend to generate a complete date range for the last 7 days
+  - Ensured all dates within the range are included, even those with zero activity
+  - Properly sorted dates in ascending order for correct chart rendering
+
 ## [0.2.12] - 2025-07-09
 ### Added
 - Added activity log access for admin and full_access roles

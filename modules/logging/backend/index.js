@@ -282,8 +282,19 @@ router.get('/stats', authenticateToken, (req, res, next) => {
       []
     );
     
+    // Generate a complete date range for the last 7 days
+    const dailyActivityMap = new Map();
+    
+    // Initialize the last 7 days with zero counts
+    for (let i = 0; i < 7; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const formattedDate = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+      dailyActivityMap.set(formattedDate, 0);
+    }
+    
     // Get daily activity for last 7 days
-    const dailyActivity = await dbMethods.all(db, 
+    const activityResults = await dbMethods.all(db, 
       `SELECT 
         DATE(created_at) as date,
         COUNT(*) as count
@@ -293,6 +304,19 @@ router.get('/stats', authenticateToken, (req, res, next) => {
       ORDER BY date`,
       []
     );
+    
+    // Merge actual counts into the map
+    activityResults.forEach(row => {
+      if (dailyActivityMap.has(row.date)) {
+        dailyActivityMap.set(row.date, row.count);
+      }
+    });
+    
+    // Convert map to array for response
+    const dailyActivity = Array.from(dailyActivityMap, ([date, count]) => ({ date, count }));
+    
+    // Sort by date (ascending)
+    dailyActivity.sort((a, b) => new Date(a.date) - new Date(b.date));
     
     // Get top users by activity
     const topUsers = await dbMethods.all(db, 
