@@ -42,9 +42,12 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
     const eventBus = req.app.locals.eventBus;
     
     // Query parameters for filtering and pagination
-    const { isActive, searchTerm, role, limit, page = 1 } = req.query;
+    const { isActive, search, searchTerm, role, limit, page = 1 } = req.query;
     const pageSize = parseInt(limit) || 10;
     const offset = (parseInt(page) - 1) * pageSize;
+    
+    // Use search parameter from frontend or fallback to searchTerm for backwards compatibility
+    const searchQuery = search || searchTerm;
     
     console.log('User list request with params:', req.query);
     console.log('Authenticated user:', req.user);
@@ -72,9 +75,9 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
       params.push(isActive === 'true' ? 1 : 0);
     }
     
-    if (searchTerm) {
+    if (searchQuery) {
       whereConditions.push('(u.first_name LIKE ? OR u.last_name LIKE ? OR u.email LIKE ?)');
-      const searchPattern = `%${searchTerm}%`;
+      const searchPattern = `%${searchQuery}%`;
       params.push(searchPattern, searchPattern, searchPattern);
     }
     
