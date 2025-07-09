@@ -48,6 +48,9 @@ const ActivityLogs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [startDate, setStartDate] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)); // Last 30 days
+  
+  // Get auth context at the component top level
+  const auth = useAuth();
   const [endDate, setEndDate] = useState(new Date());
   const [selectedEntityType, setSelectedEntityType] = useState('');
   const [selectedAction, setSelectedAction] = useState('');
@@ -117,7 +120,6 @@ const ActivityLogs = () => {
   // Check authentication and permissions
   useEffect(() => {
     try {
-      const auth = useAuth();
       if (!auth) {
         console.warn('Auth context is unavailable');
         setError('Authentication context is unavailable. Please try logging out and back in.');
@@ -168,20 +170,7 @@ const ActivityLogs = () => {
     }
   }, [currentPage, hasAuth, canViewLogs, fetchLogs]);
   
-  const loadFilters = async () => {
-    try {
-      // Since getEntityTypes isn't available, we'll simulate it with static data
-      const entityTypesResponse = { data: ['User', 'Role', 'Permission', 'Auth', 'System'] };
-      // Since getActionTypes isn't available, we'll simulate it with static data
-      const actionTypesResponse = { data: ['Create', 'Read', 'Update', 'Delete', 'Login', 'Logout', 'Import', 'Export'] };
-      
-      setEntityTypes(entityTypesResponse.data || []);
-      setActionTypes(actionTypesResponse.data || []);
-    } catch (error) {
-      console.error('Error loading filters:', error);
-      // Non-critical error, can continue with logs
-    }
-  };
+  // Filters are already loaded in the fetchActionTypes and fetchEntityTypes functions
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -339,25 +328,31 @@ const ActivityLogs = () => {
                     <InputGroup.Text>
                       <FaCalendarAlt />
                     </InputGroup.Text>
-                    <DatePicker
-                      selected={startDate}
-                      onChange={(date) => setStartDate(date)}
-                      selectsStart
-                      startDate={startDate}
-                      endDate={endDate}
-                      className="form-control glass-input"
-                      placeholderText="Start Date"
-                    />
-                    <DatePicker
-                      selected={endDate}
-                      onChange={(date) => setEndDate(date)}
-                      selectsEnd
-                      startDate={startDate}
-                      endDate={endDate}
-                      minDate={startDate}
-                      className="form-control"
-                      placeholderText="End Date"
-                    />
+                    <div className="form-control glass-input">
+                      <DatePicker
+                        selected={startDate}
+                        onChange={(date) => setStartDate(date)}
+                        selectsStart
+                        startDate={startDate}
+                        endDate={endDate}
+                        className="w-100 border-0 bg-transparent"
+                        placeholderText="Start Date"
+                        wrapperClassName="d-inline-block w-100"
+                      />
+                    </div>
+                    <div className="form-control glass-input">
+                      <DatePicker
+                        selected={endDate}
+                        onChange={(date) => setEndDate(date)}
+                        selectsEnd
+                        startDate={startDate}
+                        endDate={endDate}
+                        minDate={startDate}
+                        className="w-100 border-0 bg-transparent"
+                        placeholderText="End Date"
+                        wrapperClassName="d-inline-block w-100"
+                      />
+                    </div>
                   </InputGroup>
                 </Form.Group>
               </Col>
