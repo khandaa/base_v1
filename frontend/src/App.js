@@ -27,6 +27,7 @@ import RoleList from './components/roles/RoleList';
 import RoleDetails from './components/roles/RoleDetails';
 import RoleCreate from './components/roles/RoleCreate';
 import RoleEdit from './components/roles/RoleEdit';
+import RoleBulkUpload from './components/roles/RoleBulkUpload';
 
 // Permission Management Components
 import PermissionList from './components/permissions/PermissionList';
@@ -82,6 +83,7 @@ function App() {
           <Route path=":id" element={<RoleDetails />} />
           <Route path="create" element={<RoleCreate />} />
           <Route path="edit/:id" element={<RoleEdit />} />
+          <Route path="bulk-upload" element={<RoleBulkUpload />} />
         </Route>
         
         {/* Permission Management Routes */}

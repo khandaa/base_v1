@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt, FaCloudUploadAlt } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { roleAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -96,14 +96,24 @@ const RoleList = () => {
         </Col>
         <Col md={6} className="text-md-end">
           {canCreateRole && (
-            <Button 
-              variant="primary" 
-              as={Link} 
-              to="/roles/create"
-              className="d-inline-flex align-items-center"
-            >
-              <FaPlus className="me-2" /> Add New Role
-            </Button>
+            <>
+              <Button 
+                variant="outline-primary" 
+                as={Link} 
+                to="/roles/bulk-upload"
+                className="d-inline-flex align-items-center me-2"
+              >
+                <FaCloudUploadAlt className="me-2" /> Bulk Upload
+              </Button>
+              <Button 
+                variant="primary" 
+                as={Link} 
+                to="/roles/create"
+                className="d-inline-flex align-items-center"
+              >
+                <FaPlus className="me-2" /> Add New Role
+              </Button>
+            </>
           )}
         </Col>
       </Row>

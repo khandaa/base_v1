@@ -47,6 +47,7 @@ base_v1/
   - Individual user creation and editing
   - Role management directly from user edit page
   - Bulk user upload via CSV file
+  - Bulk role upload via CSV file with permission assignment
   - CSV template download for easy onboarding
 - System activity logging and monitoring
 - Permission-based UI components

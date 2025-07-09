@@ -110,6 +110,34 @@ export const roleAPI = {
   createRole: (roleData) => api.post('/role_management/roles', roleData),
   updateRole: (id, roleData) => api.put(`/role_management/roles/${id}`, roleData),
   deleteRole: (id) => api.delete(`/role_management/roles/${id}`),
+  uploadBulkRoles: (formData, onUploadProgress) => {
+    return api.post('/role_management/roles/bulk', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      },
+      onUploadProgress
+    });
+  },
+  downloadRoleTemplate: () => {
+    return api.get('/role_management/roles/template', {
+      responseType: 'blob'
+    }).then(response => {
+      // Create blob link to download
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'role-template.csv');
+      
+      // Append to html page
+      document.body.appendChild(link);
+      
+      // Force download
+      link.click();
+      
+      // Clean up and remove the link
+      link.parentNode.removeChild(link);
+    });
+  }
 };
 
 // Permission Management API
