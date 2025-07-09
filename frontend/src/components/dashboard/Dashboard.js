@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card } from 'react-bootstrap';
 import { FaUsers, FaUserTag, FaShieldAlt, FaList } from 'react-icons/fa';
 import { Line, Bar } from 'react-chartjs-2';
+import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -30,6 +31,7 @@ ChartJS.register(
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     userCount: 0,
@@ -182,7 +184,11 @@ const Dashboard = () => {
       
       <Row className="dashboard-stats mb-4">
         <Col md={3}>
-          <Card className="stat-card bg-primary text-white">
+          <Card 
+            className="stat-card bg-primary text-white" 
+            onClick={() => navigate('/users')}
+            style={{ cursor: 'pointer' }}
+          >
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -196,7 +202,11 @@ const Dashboard = () => {
         </Col>
         
         <Col md={3}>
-          <Card className="stat-card bg-success text-white">
+          <Card 
+            className="stat-card bg-success text-white"
+            onClick={() => navigate('/roles')} 
+            style={{ cursor: 'pointer' }}
+          >
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -210,7 +220,11 @@ const Dashboard = () => {
         </Col>
         
         <Col md={3}>
-          <Card className="stat-card bg-warning text-white">
+          <Card 
+            className="stat-card bg-warning text-white"
+            onClick={() => navigate('/permissions')} 
+            style={{ cursor: 'pointer' }}
+          >
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center">
                 <div>
@@ -224,7 +238,11 @@ const Dashboard = () => {
         </Col>
         
         <Col md={3}>
-          <Card className="stat-card bg-info text-white">
+          <Card 
+            className="stat-card bg-info text-white"
+            onClick={() => navigate('/activity')} 
+            style={{ cursor: 'pointer' }}
+          >
             <Card.Body>
               <div className="d-flex justify-content-between align-items-center">
                 <div>

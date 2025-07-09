@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.11] - 2025-07-09
+### Added
+- Made dashboard cards clickable to navigate to their respective pages
+  - Users card now navigates to users page
+  - Roles card now navigates to roles page
+  - Permissions card now navigates to permissions page
+  - Activities card now navigates to activity page
+  - Added visual cursor pointer indicator for better UX
+
 ## [0.2.10] - 2025-07-09
 ### Fixed
 - Fixed user management search filter not working
