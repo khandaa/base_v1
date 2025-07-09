@@ -155,7 +155,7 @@ router.post('/register', [
 
 // Login user
 router.post('/login', [
-  body('email').isEmail().withMessage('Valid email is required'),
+  body('email').notEmpty().withMessage('Username is required'),
   body('password').notEmpty().withMessage('Password is required'),
 ], async (req, res) => {
   // Validate request
@@ -169,10 +169,16 @@ router.post('/login', [
   const eventBus = req.app.locals.eventBus;
   
   try {
-    // Find user by email
+    // Find user by email or username (if email contains @ treat as email, otherwise as username)
+    const isEmail = email.includes('@');
+    const query = isEmail ? 
+      'SELECT user_id, email, password_hash, first_name, last_name, is_active FROM users_master WHERE email = ?' :
+      'SELECT user_id, email, password_hash, first_name, last_name, is_active FROM users_master WHERE email = ? OR mobile_number = ?';
+    const params = isEmail ? [email] : [email, email];
+    
     db.get(
-      'SELECT user_id, email, password_hash, first_name, last_name, is_active FROM users_master WHERE email = ?',
-      [email],
+      query,
+      params,
       async (err, user) => {
         if (err) {
           console.error('Database error:', err);

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.5] - 2025-07-09
+### Changed
+- Modified login process to support username instead of email
+  - Removed email validation from login form
+  - Updated backend to allow login with username or email
+  - Updated UI labels from "Email Address" to "Username"
+  - Updated validation messages for better user experience
+
+## [0.2.4] - 2025-06-27
+### Fixed
+- Fixed JWT secret mismatch between authentication module and middleware
+  - Standardized JWT secret across application components
+  - Resolved 403 Forbidden errors when accessing API endpoints
+
 ## [0.2.3] - 2025-06-27
 ### Fixed
 - Admin permissions issue in frontend application

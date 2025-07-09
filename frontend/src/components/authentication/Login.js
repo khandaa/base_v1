@@ -19,8 +19,7 @@ const Login = () => {
   // Validation schema for login form
   const validationSchema = Yup.object({
     email: Yup.string()
-      .email('Invalid email address')
-      .required('Email is required'),
+      .required('Username is required'),
     password: Yup.string()
       .required('Password is required')
   });
@@ -77,12 +76,12 @@ const Login = () => {
                       <Form.Group className="mb-3">
                         <Form.Label>
                           <FaUser className="me-2" />
-                          Email Address
+                          Username
                         </Form.Label>
                         <Form.Control
-                          type="email"
+                          type="text"
                           name="email"
-                          placeholder="Enter email"
+                          placeholder="Enter username"
                           value={values.email}
                           onChange={handleChange}
                           onBlur={handleBlur}
