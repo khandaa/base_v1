@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Pagination } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Pagination, Dropdown, Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaUser, FaToggleOn, FaToggleOff } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaUser, FaToggleOn, FaToggleOff, FaUserTag } from 'react-icons/fa';
 import { toast } from 'react-toastify';
-import { userAPI } from '../../services/api';
+import { userAPI, roleAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 const UserList = () => {
@@ -13,6 +13,10 @@ const UserList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [roles, setRoles] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [savingRole, setSavingRole] = useState(false);
   const pageSize = 10;
   
   const { hasPermission } = useAuth();
@@ -25,7 +29,22 @@ const UserList = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, [currentPage, searchTerm]);
+  
+  // Fetch all available roles
+  const fetchRoles = async () => {
+    try {
+      const response = await roleAPI.getRoles();
+      if (response.data && Array.isArray(response.data)) {
+        setRoles(response.data);
+      } else if (response.data && Array.isArray(response.data.roles)) {
+        setRoles(response.data.roles);
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -98,6 +117,46 @@ const UserList = () => {
     setCurrentPage(pageNumber);
   };
 
+  // Handle opening role edit modal
+  const handleShowRoleModal = (user) => {
+    setSelectedUser(user);
+    setShowRoleModal(true);
+  };
+  
+  // Handle role update
+  const handleUpdateUserRoles = async (selectedRoleIds) => {
+    if (!selectedUser) return;
+    
+    try {
+      setSavingRole(true);
+      
+      // Get existing user data and just update the roles
+      const userData = {
+        roles: selectedRoleIds
+      };
+      
+      await userAPI.updateUser(selectedUser.user_id, userData);
+      
+      // Update user in local state
+      const updatedRoles = roles.filter(role => selectedRoleIds.includes(role.role_id));
+      
+      setUsers(users.map(user => {
+        if (user.user_id === selectedUser.user_id) {
+          return { ...user, roles: updatedRoles };
+        }
+        return user;
+      }));
+      
+      toast.success('User roles updated successfully');
+      setShowRoleModal(false);
+    } catch (error) {
+      console.error('Error updating user roles:', error);
+      toast.error('Failed to update user roles');
+    } finally {
+      setSavingRole(false);
+    }
+  };
+
   return (
     <Container fluid>
       <Row className="mb-4">
@@ -166,6 +225,7 @@ const UserList = () => {
                       <th>#</th>
                       <th>Name</th>
                       <th>Email</th>
+                      <th>Mobile</th>
                       <th>Roles</th>
                       <th>Status</th>
                       <th>Created Date</th>
@@ -184,12 +244,27 @@ const UserList = () => {
                             </Link>
                           </td>
                           <td>{user.email}</td>
+                          <td>{user.mobile_number || '-'}</td>
                           <td>
-                            {user.roles && user.roles.map(role => (
-                              <Badge key={role.role_id} pill bg="primary" className="me-1">
-                                {role.name}
-                              </Badge>
-                            ))}
+                            <div className="d-flex align-items-center">
+                              <div>
+                                {user.roles && user.roles.map(role => (
+                                  <Badge key={role.role_id} pill bg="primary" className="me-1">
+                                    {role.name}
+                                  </Badge>
+                                ))}
+                              </div>
+                              {canEditUser && (
+                                <Button 
+                                  variant="link" 
+                                  className="text-decoration-none p-0 ms-2"
+                                  onClick={() => handleShowRoleModal(user)}
+                                  title="Edit roles"
+                                >
+                                  <FaUserTag size={14} />
+                                </Button>
+                              )}
+                            </div>
                           </td>
                           <td>
                             <Badge bg={user.is_active ? 'success' : 'danger'}>
@@ -307,5 +382,76 @@ const UserList = () => {
     </Container>
   );
 };
+
+      {/* Role Edit Modal */}
+      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit User Roles</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {selectedUser && (
+            <>
+              <p>
+                <strong>User:</strong> {selectedUser.first_name} {selectedUser.last_name}
+              </p>
+              <Form>
+                <Form.Group className="mb-3">
+                  <Form.Label>Assign Roles</Form.Label>
+                  {roles.map(role => {
+                    const isChecked = selectedUser.roles?.some(userRole => 
+                      userRole.role_id === role.role_id
+                    );
+                    
+                    return (
+                      <Form.Check 
+                        key={role.role_id}
+                        type="checkbox"
+                        id={`role-${role.role_id}`}
+                        label={role.name}
+                        defaultChecked={isChecked}
+                        onChange={(e) => {
+                          // Update selected user roles when checkbox is toggled
+                          if (e.target.checked) {
+                            // Add role if not already added
+                            if (!selectedUser.roles.some(r => r.role_id === role.role_id)) {
+                              setSelectedUser({
+                                ...selectedUser,
+                                roles: [...selectedUser.roles, role]
+                              });
+                            }
+                          } else {
+                            // Remove role
+                            setSelectedUser({
+                              ...selectedUser,
+                              roles: selectedUser.roles.filter(r => r.role_id !== role.role_id)
+                            });
+                          }
+                        }}
+                      />
+                    );
+                  })}
+                </Form.Group>
+              </Form>
+            </>
+          )}
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRoleModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => {
+              if (selectedUser) {
+                const selectedRoleIds = selectedUser.roles.map(role => role.role_id);
+                handleUpdateUserRoles(selectedRoleIds);
+              }
+            }}
+            disabled={savingRole}
+          >
+            {savingRole ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
 export default UserList;
