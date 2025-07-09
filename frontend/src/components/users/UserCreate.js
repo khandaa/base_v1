@@ -17,7 +17,17 @@ const UserCreate = () => {
     const fetchRoles = async () => {
       try {
         const response = await roleAPI.getRoles();
-        setRoles(response.data);
+        console.log('Roles API response:', response.data);
+        
+        // Handle different response structures
+        if (response.data && Array.isArray(response.data)) {
+          setRoles(response.data);
+        } else if (response.data && Array.isArray(response.data.roles)) {
+          setRoles(response.data.roles);
+        } else {
+          console.error('Unexpected roles data structure:', response.data);
+          setRoles([]);
+        }
       } catch (error) {
         console.error('Error fetching roles:', error);
         toast.error('Failed to load roles');

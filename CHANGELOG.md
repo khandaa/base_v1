@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated frontend to check for 'activity_view' permission instead of 'log_view'
   - Added role-based access check for Admin and full_access roles
   - Aligned permission naming between frontend and backend components
+- Fixed roles not loading on create new user page
+  - Added robust response structure handling to properly extract roles data
+  - Improved error handling and logging for API responses
+  - Fixed data access pattern to handle both flat and nested response structures
 
 ## [0.2.12] - 2025-07-09
 ### Added
