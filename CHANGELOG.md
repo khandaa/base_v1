@@ -2,6 +2,7 @@
 
 ### Added
 - Added 'Mobile Number' field to both Add User and Edit User pages. The field is required and validated for 10 digits. Users can now enter and update mobile numbers for each user.
+- User list page: You can now search users by mobile number directly using the search box above the table. The dropdown selector has been removed for a simpler experience.
 ### Changed
 - On the user list page, replaced the "View user" action with an "Edit user" action. The button now navigates to the edit user page and uses the edit icon.
 - Fixed: Edit User page now reliably fetches and displays all available roles and pre-selects the user's current roles, regardless of backend response format.

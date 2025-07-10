@@ -52,7 +52,7 @@ const UserList = () => {
       const params = {
         page: currentPage,
         limit: pageSize,
-        search: searchTerm || undefined
+        mobile_number: searchTerm || undefined
       };
       
       const response = await userAPI.getUsers(params);
