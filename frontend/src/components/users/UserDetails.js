@@ -164,6 +164,18 @@ const UserDetails = () => {
                 <p>{user.user_id}</p>
               </div>
               <div className="mb-3">
+                <h6 className="text-muted mb-1">Full Name</h6>
+                <p>{user.first_name} {user.last_name}</p>
+              </div>
+              <div className="mb-3">
+                <h6 className="text-muted mb-1">Email</h6>
+                <p>{user.email}</p>
+              </div>
+              <div className="mb-3">
+                <h6 className="text-muted mb-1">Mobile Number</h6>
+                <p>{user.mobile_number || <span className="text-muted">Not set</span>}</p>
+              </div>
+              <div className="mb-3">
                 <h6 className="text-muted mb-1">Created On</h6>
                 <p>{new Date(user.created_at).toLocaleString()}</p>
               </div>

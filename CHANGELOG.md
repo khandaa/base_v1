@@ -1,7 +1,13 @@
 ## [Unreleased]
+
+### Added
+- Added 'Mobile Number' field to both Add User and Edit User pages. The field is required and validated for 10 digits. Users can now enter and update mobile numbers for each user.
 ### Changed
 - On the user list page, replaced the "View user" action with an "Edit user" action. The button now navigates to the edit user page and uses the edit icon.
 - Fixed: Edit User page now reliably fetches and displays all available roles and pre-selects the user's current roles, regardless of backend response format.
+### Features
+- User List: You can now toggle a user's Active/Inactive status directly from the user list page.
+- User List: You can edit a user's roles directly from the user list page using a modal dialog, with all roles shown and current roles pre-selected.
 # Changelog
 All notable changes to this project will be documented in this file.
 

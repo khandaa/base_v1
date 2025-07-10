@@ -1,2 +1,3 @@
 ### [Unreleased]
-- Edit User: The edit user page now reliably fetches and displays all available roles, with the user's current roles pre-selected. This works regardless of backend response format.
+- User List: You can now toggle a user's Active/Inactive status directly from the user list page.
+- User List: You can edit a user's roles directly from the user list page using a modal dialog, with all roles shown and current roles pre-selected.

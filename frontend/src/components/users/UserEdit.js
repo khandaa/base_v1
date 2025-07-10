@@ -55,6 +55,9 @@ const UserEdit = () => {
     lastName: Yup.string()
       .required('Last name is required')
       .max(50, 'Last name must be at most 50 characters'),
+    mobileNumber: Yup.string()
+      .required('Mobile number is required')
+      .matches(/^\d{10}$/, 'Mobile number must be 10 digits'),
     email: Yup.string()
       .email('Invalid email address')
       .required('Email is required')
@@ -103,6 +106,7 @@ const UserEdit = () => {
         first_name: values.firstName,
         last_name: values.lastName,
         email: values.email,
+        mobile_number: values.mobileNumber,
         roles: values.roleIds, // Changed from role_ids to roles to match backend API
         is_active: values.isActive
       };
@@ -154,6 +158,7 @@ const UserEdit = () => {
     firstName: user.first_name || '',
     lastName: user.last_name || '',
     email: user.email || '',
+    mobileNumber: user.mobile_number || '',
     password: '',
     confirmPassword: '',
     roleIds: userRoleIds,
@@ -208,6 +213,22 @@ const UserEdit = () => {
                           />
                           <Form.Control.Feedback type="invalid">
                             {errors.firstName}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Mobile Number</Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="mobileNumber"
+                            value={values.mobileNumber}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            isInvalid={touched.mobileNumber && errors.mobileNumber}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.mobileNumber}
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>

@@ -45,6 +45,9 @@ const UserCreate = () => {
     lastName: Yup.string()
       .required('Last name is required')
       .max(50, 'Last name must be at most 50 characters'),
+    mobileNumber: Yup.string()
+      .required('Mobile number is required')
+      .matches(/^\d{10}$/, 'Mobile number must be 10 digits'),
     email: Yup.string()
       .email('Invalid email address')
       .required('Email is required')
@@ -74,6 +77,8 @@ const UserCreate = () => {
         first_name: values.firstName,
         last_name: values.lastName,
         email: values.email,
+        mobile_number: values.mobileNumber,
+        mobile_number: values.mobileNumber,
         password: values.password,
         mobile_number: values.email, // Add mobile_number field as required by backend
         roles: values.roleIds,       // Changed from role_ids to roles to match backend expectation
@@ -115,10 +120,12 @@ const UserCreate = () => {
                   firstName: '',
                   lastName: '',
                   email: '',
+    mobileNumber: '',
+                  mobileNumber: '',
                   password: '',
                   confirmPassword: '',
                   roleIds: [],
-                  isActive: true
+    isActive: true
                 }}
                 validationSchema={validationSchema}
                 onSubmit={handleSubmit}
@@ -148,6 +155,38 @@ const UserCreate = () => {
                           />
                           <Form.Control.Feedback type="invalid">
                             {errors.firstName}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Mobile Number</Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="mobileNumber"
+                            value={values.mobileNumber}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            isInvalid={touched.mobileNumber && errors.mobileNumber}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.mobileNumber}
+                          </Form.Control.Feedback>
+                        </Form.Group>
+                      </Col>
+                      <Col md={6}>
+                        <Form.Group className="mb-3">
+                          <Form.Label>Mobile Number</Form.Label>
+                          <Form.Control
+                            type="text"
+                            name="mobileNumber"
+                            value={values.mobileNumber}
+                            onChange={handleChange}
+                            onBlur={handleBlur}
+                            isInvalid={touched.mobileNumber && errors.mobileNumber}
+                          />
+                          <Form.Control.Feedback type="invalid">
+                            {errors.mobileNumber}
                           </Form.Control.Feedback>
                         </Form.Group>
                       </Col>
