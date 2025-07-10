@@ -1,4 +1,8 @@
 ## [Unreleased]
+
+### 2025-07-10
+- Added `proxy` configuration to `frontend/package.json` to forward API requests to Express backend on port 5000. This resolves 404 errors for `/api` requests from React development server.
+
 ### Added
 - Feature Toggle system: backend API (CRUD, admin/full_access only), DB migration, and frontend admin UI for managing feature flags.
 ### Fixed

@@ -9,7 +9,12 @@ const FeatureToggleList = () => {
   const [toggles, setToggles] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editToggle, setEditToggle] = useState(null);
-  const [form, setForm] = useState({ feature_name: '', enabled: false, description: '' });
+  const featureOptions = [
+  { value: 'user_management', label: 'User Management' },
+  { value: 'role_management', label: 'Role Management' },
+  { value: 'permissions_management', label: 'Permissions Management' }
+];
+const [form, setForm] = useState({ feature_name: '', enabled: false, description: '', feature: featureOptions[0].value });
   const [loading, setLoading] = useState(false);
 
   const fetchToggles = async () => {
@@ -90,9 +95,17 @@ const FeatureToggleList = () => {
         <Modal.Body>
           <Form>
             <Form.Group className="mb-3">
-              <Form.Label>Feature Name</Form.Label>
-              <Form.Control type="text" value={form.feature_name} onChange={e => setForm(f => ({ ...f, feature_name: e.target.value }))} disabled={!!editToggle} required />
-            </Form.Group>
+  <Form.Label>Feature</Form.Label>
+  <Form.Select value={form.feature} onChange={e => setForm(f => ({ ...f, feature: e.target.value }))} disabled={!!editToggle} required>
+    {featureOptions.map(opt => (
+      <option key={opt.value} value={opt.value}>{opt.label}</option>
+    ))}
+  </Form.Select>
+</Form.Group>
+<Form.Group className="mb-3">
+  <Form.Label>Feature Name</Form.Label>
+  <Form.Control type="text" value={form.feature_name} onChange={e => setForm(f => ({ ...f, feature_name: e.target.value }))} disabled={!!editToggle} required />
+</Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Description</Form.Label>
               <Form.Control as="textarea" rows={2} value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />

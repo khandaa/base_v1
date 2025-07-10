@@ -67,6 +67,17 @@ base_v1/
 
 ## Getting Started
 
+### Local Development Proxy
+
+The React frontend is configured to proxy API requests to the Express backend:
+
+```
+"proxy": "http://localhost:5000"
+```
+
+This allows you to use `/api/*` endpoints in your frontend code without specifying the backend port. If you encounter 404 errors for `/api` requests, ensure the proxy is set and restart the React dev server.
+
+
 ### Prerequisites
 
 - Node.js (v14.x or later)

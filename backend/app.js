@@ -138,15 +138,22 @@ app.get('/api/feature-toggles', requireAdminOrFullAccess, (req, res) => {
 
 // Create a new feature toggle
 app.post('/api/feature-toggles', requireAdminOrFullAccess, (req, res) => {
-  const { feature_name, enabled, description } = req.body;
+  console.log('POST /api/feature-toggles body:', req.body);
+  const { feature_name, enabled, description, feature } = req.body;
   if (!feature_name) return res.status(400).json({ error: 'feature_name required' });
   db.run(
-    'INSERT INTO feature_toggles (feature_name, enabled, description) VALUES (?, ?, ?)',
-    [feature_name, enabled ? 1 : 0, description || ''],
+    'INSERT INTO feature_toggles (feature_name, enabled, description, feature) VALUES (?, ?, ?, ?)',
+    [feature_name, enabled ? 1 : 0, description || '', feature || 'user_management'],
     function (err) {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error('SQL error (INSERT feature_toggles):', err.message);
+        return res.status(500).json({ error: err.message });
+      }
       db.get('SELECT * FROM feature_toggles WHERE id = ?', [this.lastID], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+          console.error('SQL error (SELECT feature_toggles after insert):', err.message);
+          return res.status(500).json({ error: err.message });
+        }
         res.status(201).json(row);
       });
     }
@@ -155,14 +162,21 @@ app.post('/api/feature-toggles', requireAdminOrFullAccess, (req, res) => {
 
 // Update a feature toggle
 app.put('/api/feature-toggles/:id', requireAdminOrFullAccess, (req, res) => {
-  const { enabled, description } = req.body;
+  console.log('PUT /api/feature-toggles/:id body:', req.body);
+  const { enabled, description, feature } = req.body;
   db.run(
-    'UPDATE feature_toggles SET enabled = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-    [enabled ? 1 : 0, description || '', req.params.id],
+    'UPDATE feature_toggles SET enabled = ?, description = ?, feature = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [enabled ? 1 : 0, description || '', feature || 'user_management', req.params.id],
     function (err) {
-      if (err) return res.status(500).json({ error: err.message });
+      if (err) {
+        console.error('SQL error (UPDATE feature_toggles):', err.message);
+        return res.status(500).json({ error: err.message });
+      }
       db.get('SELECT * FROM feature_toggles WHERE id = ?', [req.params.id], (err, row) => {
-        if (err) return res.status(500).json({ error: err.message });
+        if (err) {
+          console.error('SQL error (SELECT feature_toggles after update):', err.message);
+          return res.status(500).json({ error: err.message });
+        }
         res.json(row);
       });
     }
