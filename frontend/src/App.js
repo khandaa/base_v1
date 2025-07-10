@@ -1,6 +1,7 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { useAuth } from './contexts/AuthContext';
+import { Nav } from 'react-bootstrap';
 
 // Layout Components
 import MainLayout from './components/common/MainLayout';
@@ -40,7 +41,7 @@ import PermissionEdit from './components/permissions/PermissionEdit';
 import ActivityLogs from './components/logging/ActivityLogs';
 
 function App() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, currentUser, hasRole } = useAuth();
   
   if (isLoading) {
     return (
@@ -61,9 +62,7 @@ function App() {
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       
       {/* Add other menu items here */}
-      {user && (user.role === 'admin' || user.role === 'full_access') && (
-        <Nav.Link as={Link} to="/feature-toggles">Feature Toggles</Nav.Link>
-      )}
+      {/* Feature Toggles menu item is handled in the sidebar/navbar, not here */}
       <Route path="/" element={
         <ProtectedRoute>
           <MainLayout />
@@ -86,7 +85,7 @@ function App() {
           <Route index element={<RoleList />} />
           <Route path=":id" element={<RoleDetails />} />
           <Route path="create" element={<RoleCreate />} />
-          {user && (user.role === 'admin' || user.role === 'full_access') && (
+          {hasRole && hasRole(['admin', 'full_access']) && (
             <Route path="feature-toggles" element={<FeatureToggleList />} />
           )}
           <Route path="edit/:id" element={<RoleEdit />} />

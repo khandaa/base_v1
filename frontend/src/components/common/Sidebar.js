@@ -6,13 +6,14 @@ import {
   FaUserTag, 
   FaShieldAlt, 
   FaList, 
-  FaChartLine
+  FaChartLine, 
+  FaToggleOn
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
 
 const Sidebar = ({ collapsed }) => {
   const location = useLocation();
-  const { hasPermission } = useAuth();
+  const { hasPermission, hasRole } = useAuth();
   
   const menuItems = [
     {
@@ -52,6 +53,16 @@ const Sidebar = ({ collapsed }) => {
       permission: 'dashboard_view'
     }
   ];
+
+  // Conditionally add Feature Toggles menu item for admin/full_access
+  if (hasRole && hasRole(['admin', 'full_access'])) {
+    menuItems.push({
+      name: 'Feature Toggles',
+      path: '/roles/feature-toggles',
+      icon: <FaToggleOn />,
+      permission: null
+    });
+  }
 
   return (
     <div className={`sidebar ${collapsed ? 'collapsed' : ''}`} style={{
