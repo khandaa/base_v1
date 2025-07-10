@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import styles from './RoleList.module.css';
 import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Modal, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
 import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt, FaCloudUploadAlt, FaKey } from 'react-icons/fa';
@@ -247,7 +248,7 @@ const RoleList = () => {
                     <th width="20%">Role Name</th>
                     <th width="30%">Description</th>
                     <th width="25%">Permissions</th>
-                    <th width="20%">Actions</th>
+                    <th style={{minWidth: '135px'}}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -255,82 +256,73 @@ const RoleList = () => {
                     filteredRoles.map((role, index) => (
                       <tr key={role.role_id}>
                         <td>{index + 1}</td>
-                        <td>
-                          <Link to={`/roles/${role.role_id}`} className="d-flex align-items-center text-decoration-none">
-                            <FaUserTag className="me-2 text-primary" />
-                            {role.name}
-                          </Link>
-                          {['Admin', 'System'].includes(role.name) && (
-                            <Badge bg="secondary" className="ms-2">System</Badge>
-                          )}
-                        </td>
+                        <td className={styles.roleNameCell}>
+  <Link to={`/roles/${role.role_id}`} className={styles.roleName} style={{ textDecoration: 'underline', color: '#0d6efd', cursor: 'pointer' }}>
+    {role.name}
+  </Link>
+  {['Admin', 'System'].includes(role.name) && (
+    <Badge bg="secondary" className="ms-2">System</Badge>
+  )}
+</td>
                         <td>{role.description}</td>
                         <td>
-                          {role.permissions && role.permissions.length > 0 ? (
-                            <div className="d-flex flex-wrap">
-                              {role.permissions.slice(0, 3).map(permission => (
-                                <Badge key={permission.permission_id} bg="secondary" className="me-1 mb-1 badge-permission glass-badge">
-                                  {permission.name}
-                                </Badge>
-                              ))}
-                              {role.permissions.length > 3 && (
-                                <Badge bg="info" className="badge-permission glass-badge">
-                                  +{role.permissions.length - 3} more
-                                </Badge>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-muted">No permissions</span>
-                          )}
-                        </td>
+  {role.permissions && role.permissions.length > 0 ? (
+    <div className={styles.permissionBadges}>
+      {role.permissions.slice(0, 3).map(permission => (
+        <Badge key={permission.permission_id} bg="secondary" className="badge-permission glass-badge">
+          {permission.name}
+        </Badge>
+      ))}
+      {role.permissions.length > 3 && (
+        <Badge className={styles.badgeMore}>
+          +{role.permissions.length - 3} more
+        </Badge>
+      )}
+    </div>
+  ) : (
+    <span className="text-muted">No permissions</span>
+  )}
+</td>
                         <td>
-                          <div className="d-flex">
-                            <Button 
-                              variant="outline-primary" 
-                              size="sm" 
-                              className="me-2 glass-btn" 
-                              onClick={() => navigate(`/roles/${role.role_id}`)} 
-                              title="View role details"
-                            >
-                              <FaShieldAlt />
-                            </Button>
-                            
-                            {canEditRole && (
-                              <>
-                                <Button 
-                                  variant="outline-primary" 
-                                  size="sm" 
-                                  className="me-2 glass-btn" 
-                                  onClick={() => handleShowPermissionModal(role)} 
-                                  title="Edit permissions"
-                                >
-                                  <FaKey />
-                                </Button>
-                                <Button 
-                                  variant="outline-info" 
-                                  size="sm" 
-                                  className="me-2 glass-btn" 
-                                  onClick={() => navigate(`/roles/edit/${role.role_id}`)} 
-                                  title="Edit role"
-                                >
-                                  <FaEdit />
-                                </Button>
-                              </>
-                            )}
-                            
-                            {canDeleteRole && !['Admin', 'System'].includes(role.name) && (
-                              <Button 
-                                variant="outline-danger" 
-                                size="sm" 
-                                onClick={() => handleDeleteRole(role.role_id, role.name)}
-                                title="Delete role"
-                                className="glass-btn"
-                              >
-                                <FaTrash />
-                              </Button>
-                            )}
-                          </div>
-                        </td>
+  <div className={styles.actionButtons}>
+    {canEditRole ? (
+      <>
+        <Button 
+          variant="primary" 
+          size="sm" 
+          className="glass-btn" 
+          onClick={() => navigate(`/roles/edit/${role.role_id}`)} 
+          title="Edit role"
+        >
+          <FaEdit className="me-1" /> Edit Role
+        </Button>
+        <Button 
+          variant="outline-info" 
+          size="sm" 
+          className="glass-btn" 
+          onClick={() => handleShowPermissionModal(role)} 
+          title="Edit permissions"
+        >
+          <FaKey />
+        </Button>
+      </>
+    ) : null}
+    {canDeleteRole && !['Admin', 'System'].includes(role.name) ? (
+      <Button 
+        variant="outline-danger" 
+        size="sm" 
+        onClick={() => handleDeleteRole(role.role_id, role.name)}
+        title="Delete role"
+        className="glass-btn"
+      >
+        <FaTrash />
+      </Button>
+    ) : null}
+    {!(canEditRole || (canDeleteRole && !['Admin', 'System'].includes(role.name))) && (
+      <span style={{minWidth: '36px', display: 'inline-block'}}></span>
+    )}
+  </div>
+</td>
                       </tr>
                     ))
                   ) : (

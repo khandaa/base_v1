@@ -39,6 +39,10 @@ base_v1/
 
 ## Features
 
+- **2025-07-10:** Fixed JSX syntax errors in `frontend/src/components/roles/RoleList.js` (missing/mismatched `<tr>` closing tag and action button structure) that caused rendering issues on the Roles List page.
+- **2025-07-10:** Improved the Role Management table UI for clarity and modern appearance (better alignment, action buttons, permission badges, and custom styles).
+
+
 - User registration and authentication with JWT
 - Role-based access control (RBAC) system
 - User dashboard with activity metrics
