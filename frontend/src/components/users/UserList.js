@@ -275,13 +275,13 @@ const UserList = () => {
                           <td>
                             <div className="d-flex">
                               <Button 
-                                variant="outline-primary" 
+                                variant="outline-info" 
                                 size="sm" 
                                 className="me-2" 
-                                onClick={() => navigate(`/users/${user.user_id}`)} 
-                                title="View user details"
+                                onClick={() => navigate(`/users/edit/${user.user_id}`)} 
+                                title="Edit user"
                               >
-                                <FaUser />
+                                <FaEdit />
                               </Button>
                               
                               {canEditUser && (

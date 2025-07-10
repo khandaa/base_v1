@@ -1,3 +1,6 @@
+## [Unreleased]
+### Changed
+- On the user list page, replaced the "View user" action with an "Edit user" action. The button now navigates to the edit user page and uses the edit icon.
 # Changelog
 All notable changes to this project will be documented in this file.
 

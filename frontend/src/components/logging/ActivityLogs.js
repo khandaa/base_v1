@@ -49,6 +49,9 @@ const ActivityLogs = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [startDate, setStartDate] = useState(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)); // Last 30 days
   
+  // Track if component is mounted to avoid issues with DatePicker
+  const [isMounted, setIsMounted] = useState(false);
+  
   // Get auth context at the component top level
   const auth = useAuth();
   const [endDate, setEndDate] = useState(new Date());
@@ -116,6 +119,12 @@ const ActivityLogs = () => {
       console.error('Error fetching action types:', err);
     }
   }, [canViewLogs]);
+
+  // Set component as mounted
+  useEffect(() => {
+    setIsMounted(true);
+    return () => setIsMounted(false);
+  }, []);
 
   // Check authentication and permissions
   useEffect(() => {
@@ -328,31 +337,18 @@ const ActivityLogs = () => {
                     <InputGroup.Text>
                       <FaCalendarAlt />
                     </InputGroup.Text>
-                    <div className="form-control glass-input">
-                      <DatePicker
-                        selected={startDate}
-                        onChange={(date) => setStartDate(date)}
-                        selectsStart
-                        startDate={startDate}
-                        endDate={endDate}
-                        className="w-100 border-0 bg-transparent"
-                        placeholderText="Start Date"
-                        wrapperClassName="d-inline-block w-100"
-                      />
-                    </div>
-                    <div className="form-control glass-input">
-                      <DatePicker
-                        selected={endDate}
-                        onChange={(date) => setEndDate(date)}
-                        selectsEnd
-                        startDate={startDate}
-                        endDate={endDate}
-                        minDate={startDate}
-                        className="w-100 border-0 bg-transparent"
-                        placeholderText="End Date"
-                        wrapperClassName="d-inline-block w-100"
-                      />
-                    </div>
+                    <Form.Control 
+                      type="date" 
+                      value={startDate ? startDate.toISOString().split('T')[0] : ''}
+                      onChange={(e) => setStartDate(new Date(e.target.value))}
+                      className="glass-input"
+                    />
+                    <Form.Control 
+                      type="date" 
+                      value={endDate ? endDate.toISOString().split('T')[0] : ''}
+                      onChange={(e) => setEndDate(new Date(e.target.value))}
+                      className="glass-input"
+                    />
                   </InputGroup>
                 </Form.Group>
               </Col>
