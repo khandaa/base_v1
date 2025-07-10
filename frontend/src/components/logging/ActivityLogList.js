@@ -196,7 +196,13 @@ const ActivityLogList = () => {
 
   // Format timestamp to readable date and time
   const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'N/A';
     const date = new Date(timestamp);
+    if (isNaN(date.getTime())) {
+      // Optionally log for debugging
+      // console.warn('Invalid timestamp:', timestamp);
+      return 'N/A';
+    }
     return date.toLocaleString();
   };
 
@@ -376,11 +382,12 @@ const ActivityLogList = () => {
                   <thead className="table-light">
                     <tr>
                       <th>Timestamp</th>
-                      <th>User</th>
-                      <th>Action</th>
-                      <th>Entity</th>
-                      <th>Description</th>
-                      <th>Details</th>
+<th>User</th>
+<th>Action</th>
+<th>Entity</th>
+<th>Description</th>
+<th>IP Address / Port</th>
+<th>Details</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -413,15 +420,25 @@ const ActivityLogList = () => {
                             </Badge>
                           </td>
                           <td className="text-truncate" style={{ maxWidth: '350px' }}>
-                            {log.description}
-                          </td>
-                          <td>
-                            <Link to={`/logs/${log.log_id}`}>
-                              <Button size="sm" variant="outline-primary" className="glass-btn">
-                                <FaEye className="me-1" /> View
-                              </Button>
-                            </Link>
-                          </td>
+  {log.description}
+</td>
+<td>
+  {(() => {
+    const ip = log.ip_address || log.ip || log.source_ip;
+    const port = log.ip_port;
+    if (ip && port) return `${ip}:${port}`;
+    if (ip) return ip;
+    if (port) return port;
+    return 'N/A';
+  })()}
+</td>
+<td>
+  <Link to={`/logs/${log.log_id}`}>
+    <Button size="sm" variant="outline-primary" className="glass-btn">
+      <FaEye className="me-1" /> View
+    </Button>
+  </Link>
+</td>
                         </tr>
                       ))
                     ) : (
@@ -455,6 +472,14 @@ const ActivityLogList = () => {
                       <option value="100">100</option>
                     </Form.Select>
                     <span className="ms-2">entries</span>
+                    <span className="ms-3 text-muted">
+                      {(() => {
+                        const total = isNaN(Number(totalPages * pageSize)) ? 0 : Number(totalPages * pageSize);
+                        const start = (currentPage - 1) * pageSize + 1;
+                        const end = Math.min(currentPage * pageSize, filteredLogs.length ? total : 0);
+                        return `Showing ${filteredLogs.length ? start : 0} to ${filteredLogs.length ? end : 0} of ${filteredLogs.length ? total : 0} entries`;
+                      })()}
+                    </span>
                   </div>
                   
                   <div>
