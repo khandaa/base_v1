@@ -1,6 +1,7 @@
 ## [Unreleased]
 ### Changed
 - On the user list page, replaced the "View user" action with an "Edit user" action. The button now navigates to the edit user page and uses the edit icon.
+- Fixed: Edit User page now reliably fetches and displays all available roles and pre-selects the user's current roles, regardless of backend response format.
 # Changelog
 All notable changes to this project will be documented in this file.
 

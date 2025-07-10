@@ -1,2 +1,2 @@
 ### [Unreleased]
-- User List: The "View user" action has been replaced with an "Edit user" button, which takes you directly to the user edit screen.
+- Edit User: The edit user page now reliably fetches and displays all available roles, with the user's current roles pre-selected. This works regardless of backend response format.

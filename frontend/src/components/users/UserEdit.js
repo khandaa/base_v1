@@ -28,7 +28,13 @@ const UserEdit = () => {
         
         // Fetch all roles
         const rolesResponse = await roleAPI.getRoles();
-        setRoles(rolesResponse.data);
+        if (rolesResponse.data && Array.isArray(rolesResponse.data)) {
+          setRoles(rolesResponse.data);
+        } else if (rolesResponse.data && Array.isArray(rolesResponse.data.roles)) {
+          setRoles(rolesResponse.data.roles);
+        } else {
+          setRoles([]);
+        }
         
       } catch (error) {
         console.error('Error fetching data:', error);
