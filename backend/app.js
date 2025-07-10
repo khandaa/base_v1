@@ -108,6 +108,75 @@ moduleNames.forEach(moduleName => {
   }
 });
 
+// --- Feature Toggle API ---
+const jwt = require('jsonwebtoken');
+
+function requireAdminOrFullAccess(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return res.status(401).json({ error: 'Missing auth header' });
+  const token = authHeader.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Missing token' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
+    if (decoded.role === 'admin' || decoded.role === 'full_access') {
+      req.user = decoded;
+      return next();
+    }
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid token' });
+  }
+}
+
+// List all feature toggles
+app.get('/api/feature-toggles', requireAdminOrFullAccess, (req, res) => {
+  db.all('SELECT * FROM feature_toggles', [], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(rows);
+  });
+});
+
+// Create a new feature toggle
+app.post('/api/feature-toggles', requireAdminOrFullAccess, (req, res) => {
+  const { feature_name, enabled, description } = req.body;
+  if (!feature_name) return res.status(400).json({ error: 'feature_name required' });
+  db.run(
+    'INSERT INTO feature_toggles (feature_name, enabled, description) VALUES (?, ?, ?)',
+    [feature_name, enabled ? 1 : 0, description || ''],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      db.get('SELECT * FROM feature_toggles WHERE id = ?', [this.lastID], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.status(201).json(row);
+      });
+    }
+  );
+});
+
+// Update a feature toggle
+app.put('/api/feature-toggles/:id', requireAdminOrFullAccess, (req, res) => {
+  const { enabled, description } = req.body;
+  db.run(
+    'UPDATE feature_toggles SET enabled = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+    [enabled ? 1 : 0, description || '', req.params.id],
+    function (err) {
+      if (err) return res.status(500).json({ error: err.message });
+      db.get('SELECT * FROM feature_toggles WHERE id = ?', [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row);
+      });
+    }
+  );
+});
+
+// Delete a feature toggle
+app.delete('/api/feature-toggles/:id', requireAdminOrFullAccess, (req, res) => {
+  db.run('DELETE FROM feature_toggles WHERE id = ?', [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ success: true });
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -1,4 +1,6 @@
 ## [Unreleased]
+### Added
+- Feature Toggle system: backend API (CRUD, admin/full_access only), DB migration, and frontend admin UI for managing feature flags.
 ### Fixed
 - ActivityLogList: Timestamp now always displays in a readable format using formatTimestamp utility.
 - ActivityLogList: Added 'IP Address / Port' column to activity log table. Now displays the source IP/port for each activity log if available.

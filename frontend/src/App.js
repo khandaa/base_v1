@@ -24,6 +24,7 @@ import UserBulkUpload from './components/users/UserBulkUpload';
 
 // Role Management Components
 import RoleList from './components/roles/RoleList';
+import FeatureToggleList from './components/feature/FeatureToggleList';
 import RoleDetails from './components/roles/RoleDetails';
 import RoleCreate from './components/roles/RoleCreate';
 import RoleEdit from './components/roles/RoleEdit';
@@ -59,7 +60,10 @@ function App() {
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password/:token" element={<ResetPassword />} />
       
-      {/* Protected Routes */}
+      {/* Add other menu items here */}
+      {user && (user.role === 'admin' || user.role === 'full_access') && (
+        <Nav.Link as={Link} to="/feature-toggles">Feature Toggles</Nav.Link>
+      )}
       <Route path="/" element={
         <ProtectedRoute>
           <MainLayout />
@@ -82,6 +86,9 @@ function App() {
           <Route index element={<RoleList />} />
           <Route path=":id" element={<RoleDetails />} />
           <Route path="create" element={<RoleCreate />} />
+          {user && (user.role === 'admin' || user.role === 'full_access') && (
+            <Route path="feature-toggles" element={<FeatureToggleList />} />
+          )}
           <Route path="edit/:id" element={<RoleEdit />} />
           <Route path="bulk-upload" element={<RoleBulkUpload />} />
         </Route>

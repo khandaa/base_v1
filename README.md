@@ -38,6 +38,7 @@ base_v1/
 ```
 
 ## Features
+- Feature Toggle system: Admin and Full Access roles can manage feature flags via a dedicated UI and API. Use toggles to enable/disable features for controlled rollout.
 - Activity Log page now displays timestamps in a readable format and includes a new 'IP Address / Port' column, showing the source of each activity if available.
 
 - **2025-07-10:** Fixed JSX syntax errors in `frontend/src/components/roles/RoleList.js` (missing/mismatched `<tr>` closing tag and action button structure) that caused rendering issues on the Roles List page.
