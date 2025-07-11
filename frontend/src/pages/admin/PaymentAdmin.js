@@ -13,11 +13,13 @@ import {
 import {
   QrCode2 as QrCodeIcon,
   Settings as SettingsIcon,
-  Payments as PaymentsIcon
+  Payments as PaymentsIcon,
+  Receipt as ReceiptIcon
 } from '@mui/icons-material';
 import { useAuth } from '../../contexts/AuthContext';
 import QRCodeUpload from '../../components/payment/QRCodeUpload';
 import QRCodeList from '../../components/payment/QRCodeList';
+import TransactionList from '../../components/payment/TransactionList';
 import PaymentFeatureToggle from '../../components/payment/PaymentFeatureToggle';
 
 // Tab Panel Component
@@ -119,29 +121,39 @@ const PaymentAdmin = () => {
             scrollButtons="auto"
           >
             <Tab 
-              icon={<QrCodeIcon />} 
               label="Upload QR Code" 
-              disabled={!hasPaymentCreatePermission}
-            />
-            <Tab 
               icon={<QrCodeIcon />} 
-              label="Manage QR Codes" 
-              disabled={!hasPaymentViewPermission}
+              iconPosition="start" 
+              disabled={!hasPaymentCreatePermission} 
             />
             <Tab 
-              icon={<SettingsIcon />} 
+              label="Manage QR Codes" 
+              icon={<PaymentsIcon />} 
+              iconPosition="start" 
+              disabled={!hasPaymentViewPermission} 
+            />
+            <Tab 
+              label="Transactions" 
+              icon={<ReceiptIcon />} 
+              iconPosition="start" 
+              disabled={!hasPaymentViewPermission} 
+            />
+            <Tab 
               label="Settings" 
-              disabled={!hasPaymentEditPermission}
+              icon={<SettingsIcon />} 
+              iconPosition="start" 
+              disabled={!hasPaymentEditPermission} 
             />
           </Tabs>
         </Box>
         
+        {/* Upload QR Code Tab */}
         <TabPanel value={activeTab} index={0}>
           {hasPaymentCreatePermission ? (
             <QRCodeUpload 
-              onSuccess={handleUploadSuccess}
-              editMode={!!editingQrCode}
-              qrCodeData={editingQrCode}
+              onUploadSuccess={handleUploadSuccess}
+              initialData={editingQrCode}
+              onClearEdit={() => setEditingQrCode(null)}
             />
           ) : (
             <Alert severity="warning">
@@ -150,10 +162,11 @@ const PaymentAdmin = () => {
           )}
         </TabPanel>
         
+        {/* Manage QR Codes Tab */}
         <TabPanel value={activeTab} index={1}>
           {hasPaymentViewPermission ? (
             <QRCodeList 
-              onEdit={hasPaymentEditPermission ? handleEditQrCode : null}
+              onEdit={hasPaymentEditPermission ? handleEditQrCode : null} 
               onRefreshNeeded={() => setRefreshTrigger(prev => prev + 1)}
               refreshTrigger={refreshTrigger}
             />
@@ -164,11 +177,23 @@ const PaymentAdmin = () => {
           )}
         </TabPanel>
         
+        {/* Transactions Tab */}
         <TabPanel value={activeTab} index={2}>
+          {hasPaymentViewPermission ? (
+            <TransactionList />
+          ) : (
+            <Alert severity="warning">
+              You do not have permission to view transactions.
+            </Alert>
+          )}
+        </TabPanel>
+        
+        {/* Settings Tab */}
+        <TabPanel value={activeTab} index={3}>
           {hasPaymentEditPermission ? (
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <PaymentFeatureToggle onToggle={handleFeatureToggle} />
+                <PaymentFeatureToggle onStatusChange={handleFeatureToggle} />
               </Grid>
             </Grid>
           ) : (
