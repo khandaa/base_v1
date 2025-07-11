@@ -89,7 +89,8 @@ const moduleNames = [
   'role_management', 
   'permission_management', 
   'logging',
-  'database'
+  'database',
+  'payment'
 ];
 
 // Register each module's backend routes
@@ -108,88 +109,9 @@ moduleNames.forEach(moduleName => {
   }
 });
 
-// --- Feature Toggle API ---
-const jwt = require('jsonwebtoken');
-
-function requireAdminOrFullAccess(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  if (!authHeader) return res.status(401).json({ error: 'Missing auth header' });
-  const token = authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: 'Missing token' });
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret-key');
-    if (decoded.role === 'admin' || decoded.role === 'full_access') {
-      req.user = decoded;
-      return next();
-    }
-    return res.status(403).json({ error: 'Insufficient permissions' });
-  } catch (err) {
-    return res.status(401).json({ error: 'Invalid token' });
-  }
-}
-
-// List all feature toggles
-app.get('/api/feature-toggles', requireAdminOrFullAccess, (req, res) => {
-  db.all('SELECT * FROM feature_toggles', [], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json(rows);
-  });
-});
-
-// Create a new feature toggle
-app.post('/api/feature-toggles', requireAdminOrFullAccess, (req, res) => {
-  console.log('POST /api/feature-toggles body:', req.body);
-  const { feature_name, enabled, description, feature } = req.body;
-  if (!feature_name) return res.status(400).json({ error: 'feature_name required' });
-  db.run(
-    'INSERT INTO feature_toggles (feature_name, enabled, description, feature) VALUES (?, ?, ?, ?)',
-    [feature_name, enabled ? 1 : 0, description || '', feature || 'user_management'],
-    function (err) {
-      if (err) {
-        console.error('SQL error (INSERT feature_toggles):', err.message);
-        return res.status(500).json({ error: err.message });
-      }
-      db.get('SELECT * FROM feature_toggles WHERE id = ?', [this.lastID], (err, row) => {
-        if (err) {
-          console.error('SQL error (SELECT feature_toggles after insert):', err.message);
-          return res.status(500).json({ error: err.message });
-        }
-        res.status(201).json(row);
-      });
-    }
-  );
-});
-
-// Update a feature toggle
-app.put('/api/feature-toggles/:id', requireAdminOrFullAccess, (req, res) => {
-  console.log('PUT /api/feature-toggles/:id body:', req.body);
-  const { enabled, description, feature } = req.body;
-  db.run(
-    'UPDATE feature_toggles SET enabled = ?, description = ?, feature = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-    [enabled ? 1 : 0, description || '', feature || 'user_management', req.params.id],
-    function (err) {
-      if (err) {
-        console.error('SQL error (UPDATE feature_toggles):', err.message);
-        return res.status(500).json({ error: err.message });
-      }
-      db.get('SELECT * FROM feature_toggles WHERE id = ?', [req.params.id], (err, row) => {
-        if (err) {
-          console.error('SQL error (SELECT feature_toggles after update):', err.message);
-          return res.status(500).json({ error: err.message });
-        }
-        res.json(row);
-      });
-    }
-  );
-});
-
-// Delete a feature toggle
-app.delete('/api/feature-toggles/:id', requireAdminOrFullAccess, (req, res) => {
-  db.run('DELETE FROM feature_toggles WHERE id = ?', [req.params.id], function (err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ success: true });
-  });
-});
+// Register feature toggle routes
+const featureToggleRoutes = require('./routes/feature-toggles');
+app.use('/api/feature-toggles', featureToggleRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

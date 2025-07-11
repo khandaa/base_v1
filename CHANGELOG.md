@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### 2025-07-11
+- Added Payment Integration Module with QR code upload/management functionality and feature toggle support
+- Added dedicated API endpoints for payment QR code CRUD operations
+- Added frontend components for payment settings and QR code management
+- Added database schema for payment transactions and QR code storage
+- Extended feature toggle system to include payment integration toggle
+
 ### 2025-07-10
 - Added `proxy` configuration to `frontend/package.json` to forward API requests to Express backend on port 5000. This resolves 404 errors for `/api` requests from React development server.
 

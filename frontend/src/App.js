@@ -40,6 +40,9 @@ import PermissionEdit from './components/permissions/PermissionEdit';
 // Logging Components
 import ActivityLogs from './components/logging/ActivityLogs';
 
+// Payment Components
+import PaymentAdmin from './pages/admin/PaymentAdmin';
+
 function App() {
   const { isAuthenticated, isLoading, currentUser, hasRole } = useAuth();
   
@@ -102,6 +105,9 @@ function App() {
         
         {/* Logging Routes */}
         <Route path="logs" element={<ActivityLogs />} />
+        
+        {/* Payment Routes */}
+        <Route path="payment" element={<PaymentAdmin />} />
       </Route>
       
       {/* Catch All Route */}

@@ -18,7 +18,7 @@ const db = new sqlite3.Database('./db/employdex-base.db', (err) => {
 // Admin credentials
 const adminUser = {
   email: 'admin@employdex.com',
-  password: 'Admin@321'
+  password: 'Admin@123'
 };
 
 // Function to simulate admin login and verify permissions
@@ -86,7 +86,9 @@ async function testAdminLogin() {
           const requiredPermissions = [
             'user_view', 'user_create', 'user_edit', 'user_delete',
             'role_view', 'role_create', 'role_edit', 'role_delete',
-            'permission_view', 'permission_assign'
+            'permission_view', 'permission_assign', 'activity_view',
+            // Payment module permissions
+            'payment_view', 'payment_create', 'payment_edit', 'payment_delete'
           ];
           
           console.log('\nChecking for required permissions:');

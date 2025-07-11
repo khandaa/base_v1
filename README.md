@@ -17,6 +17,11 @@ base_v1/
 │   ├── app.js           # Express app setup
 │   └── server.js        # Server entry point
 │
+├── modules/             # Modular functionality
+│   └── payment/         # Payment integration module
+│       ├── backend/     # Payment backend API
+│       └── frontend/    # Payment frontend components
+│
 ├── frontend/            # React frontend
 │   ├── public/          # Static files
 │   ├── src/             # Source files
@@ -38,7 +43,8 @@ base_v1/
 ```
 
 ## Features
-- Feature Toggle system: Admin and Full Access roles can manage feature flags via a dedicated UI and API. Use toggles to enable/disable features for controlled rollout.
+- **Payment Integration Module**: A comprehensive payment integration system with QR code management and transaction tracking. Admins can upload, activate, and manage payment QR codes through an intuitive UI.
+- **Feature Toggle System**: Admin and Full Access roles can manage feature flags via a dedicated UI and API. Use toggles to enable/disable features for controlled rollout, including the new payment integration module.
 - Activity Log page now displays timestamps in a readable format and includes a new 'IP Address / Port' column, showing the source of each activity if available.
 
 - **2025-07-10:** Fixed JSX syntax errors in `frontend/src/components/roles/RoleList.js` (missing/mismatched `<tr>` closing tag and action button structure) that caused rendering issues on the Roles List page.
@@ -55,6 +61,11 @@ base_v1/
   - Bulk user upload via CSV file
   - Bulk role upload via CSV file with permission assignment
   - CSV template download for easy onboarding
+- Payment integration with QR code management
+  - Upload and manage QR codes for payment collection
+  - Activate/deactivate payment methods
+  - Track payment transactions
+  - Feature toggle for enabling/disabling payment features
 - System activity logging and monitoring
 - Permission-based UI components
 
