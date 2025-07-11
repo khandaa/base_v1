@@ -30,7 +30,7 @@ const QRCodeUpload = ({ onSuccess }) => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   
-  const { authToken } = useAuth();
+  const { token } = useAuth();
   
   const paymentTypes = [
     { value: 'UPI', label: 'UPI Payment' },
@@ -101,7 +101,7 @@ const QRCodeUpload = ({ onSuccess }) => {
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${token}`
           }
         }
       );

@@ -43,7 +43,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
   const [actionLoading, setActionLoading] = useState(false);
   const [actionMessage, setActionMessage] = useState({ text: '', type: '' });
 
-  const { authToken } = useAuth();
+  const { token } = useAuth();
 
   // Fetch QR codes from the API
   const fetchQrCodes = async () => {
@@ -53,7 +53,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
     try {
       const response = await axios.get('/api/payment/qr-codes', {
         headers: {
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -83,7 +83,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
     try {
       await axios.delete(`/api/payment/qr-codes/${selectedQrCode.id}`, {
         headers: {
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -127,7 +127,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
     try {
       await axios.patch(`/api/payment/qr-codes/${selectedQrCode.id}/activate`, {}, {
         headers: {
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${token}`
         }
       });
       

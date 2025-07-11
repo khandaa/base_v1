@@ -18,14 +18,14 @@ const PaymentFeatureToggle = ({ onToggle }) => {
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   
-  const { authToken } = useAuth();
+  const { token } = useAuth();
   
   // Fetch current feature toggle status
   const fetchToggleStatus = async () => {
     try {
       const response = await axios.get('/api/payment/status', {
         headers: {
-          'Authorization': `Bearer ${authToken}`
+          'Authorization': `Bearer ${token}`
         }
       });
       
@@ -61,7 +61,7 @@ const PaymentFeatureToggle = ({ onToggle }) => {
         },
         {
           headers: {
-            'Authorization': `Bearer ${authToken}`
+            'Authorization': `Bearer ${token}`
           }
         }
       );
