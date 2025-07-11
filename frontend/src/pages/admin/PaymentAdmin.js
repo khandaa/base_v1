@@ -51,9 +51,9 @@ const PaymentAdmin = () => {
   const { hasPermission } = useAuth();
   
   // Check if user has required permissions
-  const hasPaymentViewPermission = hasPermission('payment_view');
-  const hasPaymentCreatePermission = hasPermission('payment_create');
-  const hasPaymentEditPermission = hasPermission('payment_edit');
+  const hasPaymentViewPermission = hasPermission(['payment_view']);
+  const hasPaymentCreatePermission = hasPermission(['payment_create']);
+  const hasPaymentEditPermission = hasPermission(['payment_edit']);
   
   // Handle tab change
   const handleTabChange = (event, newValue) => {
