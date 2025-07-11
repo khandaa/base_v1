@@ -43,6 +43,9 @@ import ActivityLogs from './components/logging/ActivityLogs';
 // Payment Components
 import PaymentAdmin from './pages/admin/PaymentAdmin';
 
+// Common Components
+import Unauthorized from './components/common/Unauthorized';
+
 function App() {
   const { isAuthenticated, isLoading, currentUser, hasRole } = useAuth();
   
@@ -56,63 +59,76 @@ function App() {
     );
   }
 
+  // Create a helper function to handle unauthorized access
+  const renderUnauthorized = () => {
+    return (
+      <div className="unauthorized-container">
+        <h2>Unauthorized Access</h2>
+        <p>You do not have permission to access this resource.</p>
+        <Nav.Link as={Link} to="/dashboard">Return to Dashboard</Nav.Link>
+      </div>
+    );
+  };
+  
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
-      <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
-      
-      {/* Add other menu items here */}
-      {/* Feature Toggles menu item is handled in the sidebar/navbar, not here */}
-      <Route path="/" element={
-        <ProtectedRoute>
-          <MainLayout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<Navigate to="/dashboard" />} />
-        <Route path="dashboard" element={<Dashboard />} />
+    <React.Fragment>
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/login" element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />} />
+        <Route path="/register" element={!isAuthenticated ? <Register /> : <Navigate to="/dashboard" />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/unauthorized" element={renderUnauthorized()} />
         
-        {/* User Management Routes */}
-        <Route path="users">
-          <Route index element={<UserList />} />
-          <Route path=":id" element={<UserDetails />} />
-          <Route path="create" element={<UserCreate />} />
-          <Route path="edit/:id" element={<UserEdit />} />
-          <Route path="bulk-upload" element={<UserBulkUpload />} />
+        {/* Protected Routes */}
+        <Route path="/" element={
+          <ProtectedRoute>
+            <MainLayout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="/dashboard" />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          
+          {/* User Management Routes */}
+          <Route path="users">
+            <Route index element={<UserList />} />
+            <Route path=":id" element={<UserDetails />} />
+            <Route path="create" element={<UserCreate />} />
+            <Route path="edit/:id" element={<UserEdit />} />
+            <Route path="bulk-upload" element={<UserBulkUpload />} />
+          </Route>
+          
+          {/* Role Management Routes */}
+          <Route path="roles">
+            <Route index element={<RoleList />} />
+            <Route path=":id" element={<RoleDetails />} />
+            <Route path="create" element={<RoleCreate />} />
+            {hasRole && hasRole(['Admin', 'admin', 'full_access']) && (
+              <Route path="feature-toggles" element={<FeatureToggleList />} />
+            )}
+            <Route path="edit/:id" element={<RoleEdit />} />
+            <Route path="bulk-upload" element={<RoleBulkUpload />} />
+          </Route>
+          
+          {/* Permission Management Routes */}
+          <Route path="permissions">
+            <Route index element={<PermissionList />} />
+            <Route path=":id" element={<PermissionDetails />} />
+            <Route path="create" element={<PermissionCreate />} />
+            <Route path="edit/:id" element={<PermissionEdit />} />
+          </Route>
+          
+          {/* Logging Routes */}
+          <Route path="logs" element={<ActivityLogs />} />
+          
+          {/* Payment Routes */}
+          <Route path="payment" element={<PaymentAdmin />} />
         </Route>
         
-        {/* Role Management Routes */}
-        <Route path="roles">
-          <Route index element={<RoleList />} />
-          <Route path=":id" element={<RoleDetails />} />
-          <Route path="create" element={<RoleCreate />} />
-          {hasRole && hasRole(['admin', 'full_access']) && (
-            <Route path="feature-toggles" element={<FeatureToggleList />} />
-          )}
-          <Route path="edit/:id" element={<RoleEdit />} />
-          <Route path="bulk-upload" element={<RoleBulkUpload />} />
-        </Route>
-        
-        {/* Permission Management Routes */}
-        <Route path="permissions">
-          <Route index element={<PermissionList />} />
-          <Route path=":id" element={<PermissionDetails />} />
-          <Route path="create" element={<PermissionCreate />} />
-          <Route path="edit/:id" element={<PermissionEdit />} />
-        </Route>
-        
-        {/* Logging Routes */}
-        <Route path="logs" element={<ActivityLogs />} />
-        
-        {/* Payment Routes */}
-        <Route path="payment" element={<PaymentAdmin />} />
-      </Route>
-      
-      {/* Catch All Route */}
-      <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
-    </Routes>
+        {/* Catch All Route */}
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} />} />
+      </Routes>
+    </React.Fragment>
   );
 }
 
