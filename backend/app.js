@@ -113,6 +113,10 @@ moduleNames.forEach(moduleName => {
 const featureToggleRoutes = require('./routes/feature-toggles');
 app.use('/api/feature-toggles', featureToggleRoutes);
 
+// Register payment transaction routes
+const paymentTransactionRoutes = require('./routes/payment-transactions');
+app.use('/api/payment', paymentTransactionRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
