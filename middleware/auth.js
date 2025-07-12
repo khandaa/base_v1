@@ -36,7 +36,34 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
+/**
+ * Permission check middleware
+ * @param {String} permission - Permission required to access the route
+ * @returns {Function} Express middleware function
+ */
+const checkPermission = (permission) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'User authentication required' });
+    }
+
+    // Check if the user has the required permission
+    // This assumes that permissions are stored in the user object from the JWT
+    if (req.user.permissions && req.user.permissions.includes(permission)) {
+      return next();
+    }
+
+    // If user is admin, allow all permissions
+    if (req.user.role === 'admin') {
+      return next();
+    }
+
+    return res.status(403).json({ error: 'Insufficient permissions' });
+  };
+};
+
 module.exports = {
   authenticateToken,
+  checkPermission,
   JWT_SECRET
 };

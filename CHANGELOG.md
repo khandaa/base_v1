@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+### 2025-07-12
+- Fixed dependency issues by installing missing packages (express, express-validator, jsonwebtoken, @mui/material, @mui/icons-material)
+- Fixed middleware import path in payment-transactions.js
+- Added checkPermission function to auth middleware
+- Resolved module resolution issues for both frontend and backend
+
 ### 2025-07-11
 - Added Payment Integration Module with QR code upload/management functionality and feature toggle support
 - Added dedicated API endpoints for payment QR code CRUD operations
