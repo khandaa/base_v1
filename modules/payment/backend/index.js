@@ -70,7 +70,9 @@ const checkPaymentFeatureEnabled = async (req, res, next) => {
       ['payment_integration']
     );
 
-    if (!featureToggle || !featureToggle.is_enabled) {
+    // Check if feature toggle exists and is enabled (1)
+    // SQLite stores boolean as integers 0/1
+    if (!featureToggle || featureToggle.is_enabled !== 1) {
       return res.status(403).json({ error: 'Payment integration feature is not enabled' });
     }
     next();

@@ -8,6 +8,7 @@
 - Fixed middleware import path in payment-transactions.js
 - Added checkPermission function to auth middleware
 - Resolved module resolution issues for both frontend and backend
+- Fixed 500 Server Error in payment module by correcting the feature toggle check middleware to properly handle SQLite integer representation of boolean values
 
 ### 2025-07-11
 - Added Payment Integration Module with QR code upload/management functionality and feature toggle support
