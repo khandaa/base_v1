@@ -153,7 +153,15 @@ export const permissionAPI = {
 export const loggingAPI = {
   getLogs: (params) => api.get('/logging/activity', { params }),
   getActionTypes: () => api.get('/logging/actions'),
+  getEntityTypes: () => api.get('/logging/entities'),
   getStats: () => api.get('/logging/stats'),
+};
+
+// Feature Toggles API
+export const featureToggleAPI = {
+  getToggles: () => api.get('/feature-toggles'),
+  getToggle: (name) => api.get(`/feature-toggles/${name}`),
+  updateToggle: (name, isEnabled) => api.patch('/feature-toggles/update', { name, is_enabled: isEnabled }),
 };
 
 export default api;

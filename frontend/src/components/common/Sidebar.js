@@ -11,7 +11,7 @@ import {
   FaCreditCard
 } from 'react-icons/fa';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import { featureToggleAPI } from '../../services/api';
 
 const Sidebar = ({ collapsed }) => {
   const location = useLocation();
@@ -24,11 +24,7 @@ const Sidebar = ({ collapsed }) => {
   useEffect(() => {
     const fetchFeatureToggles = async () => {
       try {
-        const response = await axios.get('/api/feature-toggles', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await featureToggleAPI.getToggles();
         
         console.log('Feature toggles response:', response.data);
         

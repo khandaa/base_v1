@@ -239,11 +239,46 @@ router.get('/actions', authenticateToken, checkPermissions(['permission_view']),
     );
     
     return res.status(200).json({
-      actions: actions.map(a => a.action)
+      actionTypes: actions.map(a => a.action)
     });
   } catch (error) {
     console.error('Error fetching action types:', error);
     return res.status(500).json({ error: 'Failed to retrieve action types' });
+  }
+});
+
+/**
+ * @route GET /api/logging/entities
+ * @description Get all unique entity types for filtering
+ * @access Private - Requires permission_view permission
+ */
+router.get('/entities', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    
+    // Extract entity types from activity logs details where possible
+    // This is an approximation based on common patterns in log details
+    const entityTypes = await dbMethods.all(db, 
+      `SELECT DISTINCT
+         CASE 
+           WHEN details LIKE '%user%' THEN 'User'
+           WHEN details LIKE '%role%' THEN 'Role'
+           WHEN details LIKE '%permission%' THEN 'Permission'
+           WHEN details LIKE '%payment%' THEN 'Payment'
+           WHEN details LIKE '%feature%' THEN 'Feature Toggle'
+           ELSE 'System'
+         END as entity_type
+       FROM activity_logs_tx
+       ORDER BY entity_type`,
+      []
+    );
+    
+    return res.status(200).json({
+      entityTypes: entityTypes.map(e => e.entity_type)
+    });
+  } catch (error) {
+    console.error('Error fetching entity types:', error);
+    return res.status(500).json({ error: 'Failed to retrieve entity types' });
   }
 });
 

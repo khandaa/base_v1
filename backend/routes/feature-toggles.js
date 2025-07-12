@@ -13,11 +13,26 @@ const { dbMethods } = require('../../modules/database/backend');
 /**
  * @route GET /api/feature-toggles
  * @description Get all feature toggles
- * @access Private - Requires feature_toggle_view permission
+ * @access Private - Requires feature_toggle_view permission or Admin role
  */
 router.get('/', [
   authenticateToken,
-  checkPermissions(['feature_toggle_view'])
+  (req, res, next) => {
+    // Allow access if user has feature_toggle_view permission OR is Admin
+    const userRoles = req.user.roles || [];
+    const userPermissions = req.user.permissions || [];
+    
+    if (userPermissions.includes('feature_toggle_view') ||
+        userRoles.includes('Admin') ||
+        userRoles.includes('admin')) {
+      next();
+    } else {
+      return res.status(403).json({ 
+        error: 'Access denied: insufficient permissions',
+        required: ['feature_toggle_view']
+      });
+    }
+  }
 ], async (req, res) => {
   try {
     const db = req.app.locals.db;
@@ -47,11 +62,26 @@ router.get('/', [
 /**
  * @route GET /api/feature-toggles/:name
  * @description Get a specific feature toggle by name
- * @access Private - Requires feature_toggle_view permission
+ * @access Private - Requires feature_toggle_view permission or Admin role
  */
 router.get('/:name', [
   authenticateToken,
-  checkPermissions(['feature_toggle_view'])
+  (req, res, next) => {
+    // Allow access if user has feature_toggle_view permission OR is Admin
+    const userRoles = req.user.roles || [];
+    const userPermissions = req.user.permissions || [];
+    
+    if (userPermissions.includes('feature_toggle_view') ||
+        userRoles.includes('Admin') ||
+        userRoles.includes('admin')) {
+      next();
+    } else {
+      return res.status(403).json({ 
+        error: 'Access denied: insufficient permissions',
+        required: ['feature_toggle_view']
+      });
+    }
+  }
 ], async (req, res) => {
   try {
     const toggleName = req.params.name;
@@ -76,11 +106,26 @@ router.get('/:name', [
 /**
  * @route PATCH /api/feature-toggles/update
  * @description Update a feature toggle status
- * @access Private - Requires feature_toggle_edit permission
+ * @access Private - Requires feature_toggle_edit permission or Admin role
  */
 router.patch('/update', [
   authenticateToken,
-  checkPermissions(['feature_toggle_edit']),
+  (req, res, next) => {
+    // Allow access if user has feature_toggle_edit permission OR is Admin
+    const userRoles = req.user.roles || [];
+    const userPermissions = req.user.permissions || [];
+    
+    if (userPermissions.includes('feature_toggle_edit') ||
+        userRoles.includes('Admin') ||
+        userRoles.includes('admin')) {
+      next();
+    } else {
+      return res.status(403).json({ 
+        error: 'Access denied: insufficient permissions',
+        required: ['feature_toggle_edit']
+      });
+    }
+  },
   body('name').notEmpty().withMessage('Feature toggle name is required'),
   body('is_enabled').isBoolean().withMessage('is_enabled must be a boolean')
 ], async (req, res) => {
