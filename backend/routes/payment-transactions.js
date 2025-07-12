@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const db = require('../database');
-const { authenticateToken, checkPermission } = require('../middleware/auth');
+// const db = require('../database');
+const { authenticateToken, checkPermission } = require('../../middleware/auth');
 
 /**
  * @route   POST /api/payment/transactions
