@@ -1,6 +1,9 @@
 ## [Unreleased]
 
 ### 2025-07-12
+- Fixed 403 Forbidden errors by updating feature toggle routes to allow Admin users access without requiring specific permissions
+- Added missing `/api/logging/entities` endpoint to support the ActivityLogs component
+- Fixed source map warnings from react-datepicker by adding GENERATE_SOURCEMAP=false to frontend/.env
 - Fixed dependency issues by installing missing packages (express, express-validator, jsonwebtoken, @mui/material, @mui/icons-material)
 - Fixed middleware import path in payment-transactions.js
 - Added checkPermission function to auth middleware
