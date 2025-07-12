@@ -657,6 +657,49 @@ router.get('/transactions', [
 });
 
 /**
+ * @route GET /api/payment/qr-codes/:id/image
+ * @description Get QR code image
+ * @access Private - Requires payment_view permission
+ */
+router.get('/qr-codes/:id/image', [
+  authenticateToken, 
+  checkPermissions(['payment_view']),
+  checkPaymentFeatureEnabled
+], async (req, res) => {
+  try {
+    const qrCodeId = req.params.id;
+    const db = req.app.locals.db;
+    
+    // Get QR code image data
+    const qrCode = await dbMethods.get(db, 
+      'SELECT qr_code_image, qr_code_path FROM payment_qr_codes WHERE id = ?', 
+      [qrCodeId]
+    );
+    
+    if (!qrCode) {
+      return res.status(404).json({ error: 'QR code not found' });
+    }
+    
+    // If qr_code_image exists in database (stored as BLOB)
+    if (qrCode.qr_code_image) {
+      res.set('Content-Type', 'image/png');
+      return res.send(Buffer.from(qrCode.qr_code_image));
+    } 
+    // If we have a file path, try to serve that
+    else if (qrCode.qr_code_path && fs.existsSync(qrCode.qr_code_path)) {
+      return res.sendFile(qrCode.qr_code_path);
+    } 
+    // No image found
+    else {
+      return res.status(404).json({ error: 'QR code image not found' });
+    }
+  } catch (error) {
+    console.error(`Error retrieving QR code image ${req.params.id}:`, error);
+    return res.status(500).json({ error: 'Failed to retrieve QR code image' });
+  }
+});
+
+/**
  * @route GET /api/payment/transactions/:id
  * @description Get a specific transaction
  * @access Private - Requires payment_view permission

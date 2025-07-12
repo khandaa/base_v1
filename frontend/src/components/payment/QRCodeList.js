@@ -355,7 +355,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
             
             <Box sx={{ my: 2 }}>
               <img
-                src={selectedQrCode ? `/uploads/qr/${selectedQrCode.qr_code_image}` : ''}
+                src={selectedQrCode ? `/api/payment/qr-codes/${selectedQrCode.id}/image` : ''}
                 alt={`QR Code for ${selectedQrCode?.payment_name}`}
                 style={{ maxWidth: '100%', maxHeight: 300 }}
                 onError={(e) => {
