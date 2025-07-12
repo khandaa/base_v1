@@ -14,7 +14,7 @@ import {
   Alert
 } from '@mui/material';
 import { useDropzone } from 'react-dropzone';
-import axios from 'axios';
+import { paymentAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 
 const QRCodeUpload = ({ onSuccess }) => {
@@ -95,16 +95,7 @@ const QRCodeUpload = ({ onSuccess }) => {
     uploadData.append('qr_code_image', formData.qr_code_image);
     
     try {
-      const response = await axios.post(
-        '/api/payment/qr-codes',
-        uploadData,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await paymentAPI.uploadQrCode(uploadData);
       
       // Handle success
       setSuccess(true);

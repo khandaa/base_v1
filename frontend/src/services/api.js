@@ -164,4 +164,28 @@ export const featureToggleAPI = {
   updateToggle: (name, isEnabled) => api.patch('/feature-toggles/update', { name, is_enabled: isEnabled }),
 };
 
+// Payment API
+export const paymentAPI = {
+  // QR Code operations
+  getQrCodes: () => api.get('/payment/qr-codes'),
+  getQrCode: (id) => api.get(`/payment/qr-codes/${id}`),
+  deleteQrCode: (id) => api.delete(`/payment/qr-codes/${id}`),
+  activateQrCode: (id) => api.post(`/payment/qr-codes/${id}/activate`),
+  // Transactions
+  getTransactions: (params) => api.get('/payment/transactions', { params }),
+  getTransaction: (id) => api.get(`/payment/transactions/${id}`),
+  // Special handling for file uploads with authentication
+  uploadQrCode: (formData) => {
+    const token = localStorage.getItem('token');
+    return api.post('/payment/qr-codes', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+  },
+  // Feature toggle status
+  getPaymentStatus: () => api.get('/payment/status')
+};
+
 export default api;

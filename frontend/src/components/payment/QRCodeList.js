@@ -28,7 +28,7 @@ import {
   Cancel as CancelIcon,
   Visibility as VisibilityIcon
 } from '@mui/icons-material';
-import axios from 'axios';
+import { paymentAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { format } from 'date-fns';
 
@@ -51,11 +51,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
     setError(null);
     
     try {
-      const response = await axios.get('/api/payment/qr-codes', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await paymentAPI.getQrCodes();
       
       setQrCodes(response.data);
     } catch (err) {
@@ -81,11 +77,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
     setActionLoading(true);
     
     try {
-      await axios.delete(`/api/payment/qr-codes/${selectedQrCode.id}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await paymentAPI.deleteQrCode(selectedQrCode.id);
       
       // Remove the deleted QR code from the list
       setQrCodes(prevCodes => prevCodes.filter(code => code.id !== selectedQrCode.id));
@@ -125,11 +117,7 @@ const QRCodeList = ({ onEdit, onRefreshNeeded, refreshTrigger }) => {
     setActionLoading(true);
     
     try {
-      await axios.patch(`/api/payment/qr-codes/${selectedQrCode.id}/activate`, {}, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      await paymentAPI.activateQrCode(selectedQrCode.id);
       
       // Update QR codes list to reflect the change
       setQrCodes(prevCodes => 
