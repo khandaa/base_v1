@@ -32,6 +32,12 @@ app.use(express.urlencoded({ extended: true }));
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// Ensure upload directory exists
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
 // Database initialization
 const dbPath = path.join(__dirname, '..', 'db', 'employdex-base.db');
 const dbExists = fs.existsSync(dbPath);

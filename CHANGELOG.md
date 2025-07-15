@@ -1,5 +1,11 @@
 ## [Unreleased]
 
+### 2025-07-15
+- Fixed QR code upload error (500 Internal Server Error) by correcting the path mismatch between multer storage destination and Express static file serving
+- Added improved error handling for file uploads in the payment QR code module with better error messages
+- Enhanced file validation to ensure only supported image types are accepted
+- Added automatic creation of upload directories to prevent errors
+
 ### 2025-07-12
 - Fixed 403 Forbidden errors by updating feature toggle routes to allow Admin users access without requiring specific permissions
 - Added missing `/api/logging/entities` endpoint to support the ActivityLogs component

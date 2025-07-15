@@ -3,11 +3,13 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { authenticateToken, checkPermission } = require('../../modules/authentication/backend/middleware');
+//const { authenticateToken, checkPermission } = require('../../modules/authentication/backend/middleware');
+const { authenticateToken, checkPermission } = require('../../middleware/auth');
 // Set up storage for QR code images
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadDir = path.join(__dirname, '../uploads/qr-codes');
+    // Store in backend/uploads/qr-codes to match the static middleware in app.js
+    const uploadDir = path.join(__dirname, '..', 'uploads', 'qr-codes');
     
     // Create directory if it doesn't exist
     if (!fs.existsSync(uploadDir)) {
@@ -31,10 +33,16 @@ const upload = multer({
   },
   fileFilter: (req, file, cb) => {
     // Only accept images
-    if (file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
+    if (!file) {
+      cb(new Error('No file provided'), false);
+    } else if (!file.mimetype.startsWith('image/')) {
       cb(new Error('Only image files are allowed!'), false);
+    } else if (!['.jpg', '.jpeg', '.png'].includes(
+      path.extname(file.originalname).toLowerCase()
+    )) {
+      cb(new Error('Only JPG, JPEG and PNG files are allowed!'), false);
+    } else {
+      cb(null, true);
     }
   }
 });
@@ -118,12 +126,29 @@ router.get('/:id', authenticateToken, checkPermission('payment_view'), (req, res
   }
 });
 
+// Error handling middleware for multer
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    // A Multer error occurred when uploading
+    console.error('Multer error:', err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ error: 'File is too large. Maximum size is 2MB.' });
+    }
+    return res.status(400).json({ error: `Upload error: ${err.message}` });
+  } else if (err) {
+    // An unknown error occurred
+    console.error('Unknown upload error:', err);
+    return res.status(500).json({ error: err.message || 'An unknown error occurred during upload' });
+  }
+  next();
+};
+
 /**
  * @route   POST /api/payment/qr-codes
  * @desc    Upload a new QR code
  * @access  Private (requires authentication and payment_edit permission)
  */
-router.post('/', authenticateToken, checkPermission('payment_edit'), upload.single('qr_code_image'), (req, res) => {
+router.post('/', authenticateToken, checkPermission('payment_edit'), upload.single('qr_code_image'), handleMulterError, (req, res) => {
   try {
     const db = req.app.locals.db;
     const { payment_name, payment_description, payment_type } = req.body;
@@ -138,7 +163,7 @@ router.post('/', authenticateToken, checkPermission('payment_edit'), upload.sing
       return res.status(400).json({ error: 'QR code image is required' });
     }
     
-    // Get the relative path to the uploaded image
+    // Get the relative path to the uploaded image - ensure it matches the Express static serving path
     const imageUrl = `/uploads/qr-codes/${path.basename(req.file.path)}`;
     
     // Get the current timestamp
