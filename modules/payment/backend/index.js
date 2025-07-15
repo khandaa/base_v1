@@ -66,7 +66,7 @@ const checkPaymentFeatureEnabled = async (req, res, next) => {
   try {
     const db = req.app.locals.db;
     const featureToggle = await dbMethods.get(db, 
-      'SELECT is_enabled FROM feature_toggles WHERE name = ?', 
+      'SELECT is_enabled FROM feature_toggles WHERE feature_name = ?', 
       ['payment_integration']
     );
 
@@ -98,7 +98,7 @@ router.get('/status', async (req, res) => {
   try {
     const db = req.app.locals.db;
     const featureToggle = await dbMethods.get(db, 
-      'SELECT is_enabled FROM feature_toggles WHERE name = ?', 
+      'SELECT is_enabled FROM feature_toggles WHERE feature_name = ?', 
       ['payment_integration']
     );
 
@@ -248,22 +248,19 @@ router.post('/qr-codes', [
     // Create new QR code
     const result = await dbMethods.run(db, 
       `INSERT INTO payment_qr_codes (
-        payment_name, 
-        payment_description, 
-        qr_code_image, 
-        qr_code_path, 
+        name, 
+        description, 
+        image_url, 
         payment_type, 
-        is_active, 
-        created_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+        active
+      ) VALUES (?, ?, ?, ?, ?)`, 
       [
         payment_name, 
         payment_description || null, 
-        qrCodeImage, 
         req.file.path,
         payment_type,
         0,  // Set as inactive by default
-        req.user.user_id
+        //req.user.user_id
       ]
     );
     

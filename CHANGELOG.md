@@ -5,6 +5,9 @@
 - Added improved error handling for file uploads in the payment QR code module with better error messages
 - Enhanced file validation to ensure only supported image types are accepted
 - Added automatic creation of upload directories to prevent errors
+- Fixed database column name mismatch by renaming 'enabled' to 'is_enabled' in feature_toggles table
+- Updated SQL queries in payment module and feature toggles routes to use correct column names ('feature_name' and 'is_enabled')
+- Updated migration scripts and data update scripts to use consistent column names
 
 ### 2025-07-12
 - Fixed 403 Forbidden errors by updating feature toggle routes to allow Admin users access without requiring specific permissions
