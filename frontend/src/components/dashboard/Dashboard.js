@@ -16,6 +16,7 @@ import {
 } from 'chart.js';
 import { loggingAPI, userAPI, roleAPI, permissionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
+import FileUploadWidget from '../fileupload/FileUploadWidget';
 
 // Register Chart.js components
 ChartJS.register(
@@ -328,6 +329,12 @@ const Dashboard = () => {
               )}
             </Card.Body>
           </Card>
+        </Col>
+      </Row>
+
+      <Row>
+        <Col>
+          <FileUploadWidget />
         </Col>
       </Row>
     </Container>

@@ -87,6 +87,54 @@ const init = (app) => {
   if (app.locals.eventBus) {
     registerModuleEvents(app.locals.eventBus);
   }
+  
+  // Initialize database tables
+  if (app.locals.db) {
+    initializeDatabase(app.locals.db);
+  }
+};
+
+// Create necessary database tables if they don't exist
+const initializeDatabase = async (db) => {
+  try {
+    // Create payment_qr_codes table if it doesn't exist
+    await dbMethods.run(db, `
+      CREATE TABLE IF NOT EXISTS payment_qr_codes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        image_url TEXT NOT NULL,
+        image_data BLOB,
+        payment_type TEXT NOT NULL,
+        active INTEGER DEFAULT 0,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    
+    // Create payment_transactions table if it doesn't exist
+    await dbMethods.run(db, `
+      CREATE TABLE IF NOT EXISTS payment_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        transaction_reference TEXT UNIQUE NOT NULL,
+        amount REAL NOT NULL,
+        currency TEXT DEFAULT 'INR',
+        payment_status TEXT NOT NULL,
+        qr_code_id INTEGER,
+        user_id INTEGER,
+        transaction_notes TEXT,
+        transaction_metadata TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (qr_code_id) REFERENCES payment_qr_codes(id),
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+    
+    console.log('Payment module database tables initialized successfully');
+  } catch (error) {
+    console.error('Error initializing payment module database tables:', error);
+  }
 };
 
 /**
@@ -129,12 +177,11 @@ router.get('/qr-codes', [
     const qrCodes = await dbMethods.all(db, 
       `SELECT 
         id, 
-        payment_name, 
-        payment_description, 
-        qr_code_path, 
+        name, 
+        description, 
+        image_url, 
         payment_type, 
-        is_active, 
-        created_by,
+        active, 
         created_at,
         updated_at
        FROM payment_qr_codes
@@ -177,12 +224,11 @@ router.get('/qr-codes/:id', [
     const qrCode = await dbMethods.get(db, 
       `SELECT 
         id, 
-        payment_name, 
-        payment_description, 
-        qr_code_path, 
+        name, 
+        description, 
+        image_url, 
         payment_type, 
-        is_active, 
-        created_by,
+        active, 
         created_at,
         updated_at
        FROM payment_qr_codes
@@ -220,7 +266,7 @@ router.post('/qr-codes', [
   checkPermissions(['payment_create']),
   checkPaymentFeatureEnabled,
   upload.single('qr_code_image'),
-  body('payment_name').notEmpty().withMessage('QR code name is required'),
+  body('name').notEmpty().withMessage('QR code name is required'),
   body('payment_type').notEmpty().withMessage('Payment type is required')
 ], async (req, res) => {
   try {

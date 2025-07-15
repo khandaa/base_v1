@@ -42,6 +42,8 @@ import ActivityLogs from './components/logging/ActivityLogs';
 
 // Payment Components
 import PaymentAdmin from './pages/admin/PaymentAdmin';
+import FileUploadConfig from './components/fileupload/FileUploadConfig';
+
 
 // Common Components
 import Unauthorized from './components/common/Unauthorized';
@@ -123,6 +125,9 @@ function App() {
           
           {/* Payment Routes */}
           <Route path="payment" element={<PaymentAdmin />} />
+
+          {/* File Upload Widget Routes */}
+          <Route path="admin/file-upload-settings" element={<FileUploadConfig />} />
         </Route>
         
         {/* Catch All Route */}

@@ -73,6 +73,12 @@ const Sidebar = ({ collapsed }) => {
       permission: 'role_view'
     },
     {
+      name: 'File Upload Settings',
+      path: '/admin/file-upload-settings',
+      icon: <FaCreditCard />,
+      permission: 'role_view'
+    },
+    {
       name: 'Permissions',
       path: '/permissions',
       icon: <FaShieldAlt />,

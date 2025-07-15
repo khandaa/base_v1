@@ -43,7 +43,7 @@ base_v1/
 ```
 
 ## Features
-- **Payment Integration Module**: A comprehensive payment integration system with QR code management and transaction tracking. Admins can upload, activate, and manage payment QR codes through an intuitive UI.
+- **Payment Integration Module**: A comprehensive payment integration system with QR code management and transaction tracking. Admins can upload, activate, and manage payment QR codes through an intuitive UI. The module automatically creates required database tables on initialization.
 - **Feature Toggle System**: Admin and Full Access roles can manage feature flags via a dedicated UI and API. Use toggles to enable/disable features for controlled rollout, including the new payment integration module.
 - Activity Log page now displays timestamps in a readable format and includes a new 'IP Address / Port' column, showing the source of each activity if available.
 

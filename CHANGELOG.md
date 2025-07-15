@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 ### 2025-07-15
+- Fixed QR code fetching error (500 Internal Server Error) by adding database table initialization for payment_qr_codes and payment_transactions tables
 - Fixed QR code upload error (500 Internal Server Error) by correcting the path mismatch between multer storage destination and Express static file serving
 - Added improved error handling for file uploads in the payment QR code module with better error messages
 - Enhanced file validation to ensure only supported image types are accepted

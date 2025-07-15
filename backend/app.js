@@ -130,6 +130,14 @@ app.use('/api/payment/transactions', paymentTransactionRoutes);
 const paymentQrCodeRoutes = require('./routes/payment-qr-codes');
 app.use('/api/payment/qr-codes', paymentQrCodeRoutes);
 
+// Register widget config routes
+const widgetConfigRoutes = require('./routes/widget-config');
+app.use('/api', widgetConfigRoutes);
+
+// Register file upload routes
+const fileUploadRoutes = require('./routes/file-upload');
+app.use('/api', fileUploadRoutes);
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
