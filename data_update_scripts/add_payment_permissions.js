@@ -127,7 +127,7 @@ function enablePaymentFeatureToggle() {
     
     if (!toggle) {
       // Create feature toggle
-      db.run('INSERT INTO feature_toggles (feature_name, description, enabled, feature) VALUES (?, ?, ?, ?)',
+      db.run('INSERT INTO feature_toggles (feature_name, description, is_enabled, feature) VALUES (?, ?, ?, ?)',
         ['payment_integration', 'Enable payment integration with QR code support', 1, 'payment'],
         function(err) {
           if (err) {
@@ -138,9 +138,9 @@ function enablePaymentFeatureToggle() {
           console.log('Created and enabled payment_integration feature toggle');
         }
       );
-    } else if (!toggle.enabled) {
+    } else if (!toggle.is_enabled) {
       // Enable feature toggle
-      db.run('UPDATE feature_toggles SET enabled = 1 WHERE feature_name = ?', ['payment_integration'], function(err) {
+      db.run('UPDATE feature_toggles SET is_enabled = 1 WHERE feature_name = ?', ['payment_integration'], function(err) {
         if (err) {
           console.error('Error enabling feature toggle:', err.message);
           return;

@@ -45,7 +45,7 @@ CREATE INDEX IF NOT EXISTS idx_transaction_status ON payment_transactions(paymen
 
 -- Add payment feature to feature_toggles table
 -- This allows the payment integration to be toggled on/off
-INSERT OR IGNORE INTO feature_toggles (feature_name, description, enabled, feature)
+INSERT OR IGNORE INTO feature_toggles (feature_name, description, is_enabled, feature)
 VALUES ('payment_integration', 'Enable payment integration with QR code support', 0, 'payment');
 
 -- Sample data for payment_qr_codes
