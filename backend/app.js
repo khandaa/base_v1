@@ -29,6 +29,9 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // Database initialization
 const dbPath = path.join(__dirname, '..', 'db', 'employdex-base.db');
 const dbExists = fs.existsSync(dbPath);
@@ -115,7 +118,11 @@ app.use('/api/feature-toggles', featureToggleRoutes);
 
 // Register payment transaction routes
 const paymentTransactionRoutes = require('./routes/payment-transactions');
-app.use('/api/payment', paymentTransactionRoutes);
+app.use('/api/payment/transactions', paymentTransactionRoutes);
+
+// Register payment QR code routes
+const paymentQrCodeRoutes = require('./routes/payment-qr-codes');
+app.use('/api/payment/qr-codes', paymentQrCodeRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
