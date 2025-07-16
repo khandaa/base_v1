@@ -26,7 +26,7 @@ frontend/node_modules/.cache/
 # Database
 *.sqlite
 *.sqlite3
-*.db
+# *.db
 
 # Misc
 .DS_Store
@@ -50,7 +50,3 @@ logs
 *.swp
 *.swo
 
-# Cache files
-.cache
-.npm
-.eslintcache
