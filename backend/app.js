@@ -118,19 +118,25 @@ moduleNames.forEach(moduleName => {
   }
 });
 
+// Import routes
+const featureTogglesRouter = require('./routes/feature-toggles');
+const fileUploadRouter = require('./routes/file-upload');
+const paymentQrCodesRouter = require('./routes/payment-qr-codes');
+const paymentTransactionsRouter = require('./routes/payment-transactions');
+const widgetConfigRouter = require('./routes/widget-config');
+const attendanceRouter = require('./routes/attendance');
+
 // Register feature toggle routes
-const featureToggleRoutes = require('./routes/feature-toggles');
-app.use('/api/feature-toggles', featureToggleRoutes);
+app.use('/api/feature-toggles', featureTogglesRouter);
 
 // Register payment transaction routes
-const paymentTransactionRoutes = require('./routes/payment-transactions');
-app.use('/api/payment/transactions', paymentTransactionRoutes);
+app.use('/api/payment/transactions', paymentTransactionsRouter);
 
 // Register payment QR code routes
-const paymentQrCodeRoutes = require('./routes/payment-qr-codes');
-app.use('/api/payment/qr-codes', paymentQrCodeRoutes);
+app.use('/api/payment/qr-codes', paymentQrCodesRouter);
 
 // Register widget config routes
+app.use('/api', widgetConfigRouter);
 const widgetConfigRoutes = require('./routes/widget-config');
 app.use('/api', widgetConfigRoutes);
 

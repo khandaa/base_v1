@@ -95,6 +95,12 @@ const Sidebar = ({ collapsed }) => {
       path: '/analytics',
       icon: <FaChartLine />,
       permission: 'dashboard_view'
+    },
+    {
+      name: 'Attendance',
+      path: '/attendance',
+      icon: <FaList />,
+      permission: 'attendance_view'
     }
   ];
   

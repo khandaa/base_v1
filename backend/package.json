@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
-    "test": "jest"
+    "test": "jest",
+    "migrate": "node migrate.js",
+    "seed": "node scripts/seedSampleData.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -18,7 +20,7 @@
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "sqlite3": "^5.1.7",
-    "uuid": "^11.1.0"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "jest": "^28.1.0",
