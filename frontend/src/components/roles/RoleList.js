@@ -43,9 +43,10 @@ const RoleList = () => {
   const canEditRole = hasPermission(['role_update']);
   const canDeleteRole = hasPermission(['role_delete']);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchRoles();
-  }, [fetchRoles]);
+  }, []);
 
   useEffect(() => {
     fetchPermissions();
