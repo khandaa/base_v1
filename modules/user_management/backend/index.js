@@ -711,16 +711,18 @@ router.post('/users/bulk', authenticateToken, checkPermissions(['user_create']),
 async function processUserRow(row, db, results, eventBus, createdBy) {
   try {
     // Validate required fields
-    if (!row.firstName || !row.lastName || !row.email || !row.password || !row.roles) {
+    const requiredFields = ['firstName', 'lastName', 'email', 'password', 'roles'];
+    const missingFields = requiredFields.filter(field => !row[field]);
+    
+    if (missingFields.length > 0) {
       results.failed++;
       results.errors.push({
         row: results.total,
         email: row.email || 'Unknown',
-        message: 'Missing required fields'
+        message: `Missing required fields: ${missingFields.join(', ')}`
       });
       return;
     }
-    
     // Check if email already exists
     const existingUser = await dbMethods.get(db, 
       'SELECT user_id FROM users_master WHERE email = ?', 
