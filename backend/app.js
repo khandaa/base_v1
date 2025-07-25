@@ -124,7 +124,7 @@ const fileUploadRouter = require('./routes/file-upload');
 const paymentQrCodesRouter = require('./routes/payment-qr-codes');
 const paymentTransactionsRouter = require('./routes/payment-transactions');
 const widgetConfigRouter = require('./routes/widget-config');
-const attendanceRouter = require('./routes/attendance');
+// const attendanceRouter = require('./routes/attendance');
 
 // Register feature toggle routes
 app.use('/api/feature-toggles', featureTogglesRouter);
