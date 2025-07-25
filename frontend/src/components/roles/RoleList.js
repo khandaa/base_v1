@@ -28,6 +28,9 @@ const RoleList = () => {
     key: null,
     direction: 'asc'
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalRoles, setTotalRoles] = useState(0);
   
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -39,7 +42,7 @@ const RoleList = () => {
   useEffect(() => {
     fetchRoles();
     fetchPermissions();
-  }, []);
+  }, [currentPage, pageSize]);
   
   // Fetch all available permissions
   const fetchPermissions = async () => {
@@ -58,6 +61,35 @@ const RoleList = () => {
       toast.error('Failed to load permissions');
     } finally {
       setPermissionsLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      setLoading(true);
+      const response = await roleAPI.getRoles();
+      
+      if (response.data && response.data.roles) {
+        // Backend returns { count, roles } structure
+        setRoles(response.data.roles);
+        setTotalRoles(response.data.roles.length);
+      } else if (Array.isArray(response.data)) {
+        // Handle case where response might be an array directly
+        setRoles(response.data);
+        setTotalRoles(response.data.length);
+      } else {
+        console.error('Unexpected response format:', response.data);
+        toast.error('Received invalid data format from server');
+        setRoles([]);
+        setTotalRoles(0);
+      }
+    } catch (error) {
+      console.error('Error fetching roles:', error);
+      toast.error('Failed to load roles. Please try again.');
+      setRoles([]);
+      setTotalRoles(0);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -127,11 +159,19 @@ const RoleList = () => {
         });
       }
       
+      // Set total count for pagination
+      setTotalRoles(filtered.length);
+      
+      // Apply pagination
+      const startIndex = (currentPage - 1) * pageSize;
+      filtered = filtered.slice(startIndex, startIndex + pageSize);
+      
       setFilteredRoles(filtered);
     } else {
       setFilteredRoles([]);
+      setTotalRoles(0);
     }
-  }, [roles, searchTerm, filters, sortConfig]);
+  }, [roles, searchTerm, filters, sortConfig, currentPage, pageSize]);
 
   const fetchRoles = async () => {
     try {
@@ -198,6 +238,7 @@ const RoleList = () => {
   const handleFilterChange = (field, value) => {
     const newFilters = { ...filters, [field]: value };
     setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
   };
   
   // Clear all filters
@@ -210,6 +251,18 @@ const RoleList = () => {
     setSearchTerm('');
     setSortConfig({ key: null, direction: 'asc' });
     setShowFilters(false);
+    setCurrentPage(1); // Reset to first page
+  };
+  
+  // Handle page change
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+  
+  // Handle page size change
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(Number(newSize));
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   // Handle opening permission edit modal
@@ -503,6 +556,114 @@ const RoleList = () => {
                 </tbody>
               </Table>
             </div>
+          )}
+          
+          {!loading && filteredRoles.length > 0 && (
+            <Row className="mt-4">
+              <Col>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div className="d-flex align-items-center">
+                    <span className="me-2">
+                      Showing {filteredRoles.length} of {totalRoles} roles
+                    </span>
+                    <Form.Group className="d-flex align-items-center">
+                      <Form.Label className="mb-0 me-2">Rows per page:</Form.Label>
+                      <Form.Select 
+                        size="sm" 
+                        value={pageSize}
+                        onChange={(e) => handlePageSizeChange(e.target.value)}
+                        style={{ width: '80px' }}
+                      >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </div>
+                  {totalRoles > pageSize && (
+                    <nav>
+                      <ul className="pagination mb-0">
+                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(1)}
+                            disabled={currentPage === 1}
+                          >
+                            First
+                          </button>
+                        </li>
+                        <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage - 1)}
+                            disabled={currentPage === 1}
+                          >
+                            &laquo;
+                          </button>
+                        </li>
+                        
+                        {/* Generate pagination numbers */}
+                        {Array.from({ length: Math.ceil(totalRoles / pageSize) }, (_, i) => i + 1)
+                          .filter(p => {
+                            // Show only a few pages around current page
+                            return p === 1 || 
+                                  p === Math.ceil(totalRoles / pageSize) || 
+                                  Math.abs(p - currentPage) <= 2;
+                          })
+                          .map((page, index, array) => {
+                            // Add ellipsis when there are gaps
+                            if (index > 0 && array[index - 1] !== page - 1) {
+                              return [
+                                <li key={`ellipsis-${page}`} className="page-item disabled">
+                                  <span className="page-link">...</span>
+                                </li>,
+                                <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                                  <button 
+                                    className="page-link" 
+                                    onClick={() => handlePageChange(page)}
+                                  >
+                                    {page}
+                                  </button>
+                                </li>
+                              ];
+                            }
+                            return (
+                              <li key={page} className={`page-item ${currentPage === page ? 'active' : ''}`}>
+                                <button 
+                                  className="page-link" 
+                                  onClick={() => handlePageChange(page)}
+                                >
+                                  {page}
+                                </button>
+                              </li>
+                            );
+                          })}
+                          
+                        <li className={`page-item ${currentPage === Math.ceil(totalRoles / pageSize) ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(currentPage + 1)}
+                            disabled={currentPage === Math.ceil(totalRoles / pageSize)}
+                          >
+                            &raquo;
+                          </button>
+                        </li>
+                        <li className={`page-item ${currentPage === Math.ceil(totalRoles / pageSize) ? 'disabled' : ''}`}>
+                          <button 
+                            className="page-link" 
+                            onClick={() => handlePageChange(Math.ceil(totalRoles / pageSize))}
+                            disabled={currentPage === Math.ceil(totalRoles / pageSize)}
+                          >
+                            Last
+                          </button>
+                        </li>
+                      </ul>
+                    </nav>
+                  )}
+                </div>
+              </Col>
+            </Row>
           )}
         </Card.Body>
       </Card>

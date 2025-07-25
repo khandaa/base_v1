@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 ### 2025-07-25
+- Added rows per page selector (10, 20, 50, 100 options) for all data grids in the application
 - Added column-based filtering and sorting capabilities to UserList and RoleList components
 - Added 20 new users (5 each for Director, Senior Manager, Manager, and Article roles)
 - Fixed role creation and edit functionality by correcting API payload field from 'permission_ids' to 'permissions'

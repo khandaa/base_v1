@@ -30,7 +30,7 @@ const UserList = () => {
     direction: 'asc'
   });
   const [showFilters, setShowFilters] = useState(false);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
   
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -43,7 +43,7 @@ const UserList = () => {
   useEffect(() => {
     fetchUsers();
     fetchRoles();
-  }, [currentPage, searchTerm]);
+  }, [currentPage, searchTerm, pageSize]);
   
   // Fetch all available roles
   const fetchRoles = async () => {
@@ -257,6 +257,12 @@ const UserList = () => {
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
+  };
+  
+  // Handle page size change
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(Number(newSize));
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   // Handle opening role edit modal
@@ -579,48 +585,65 @@ const UserList = () => {
                 </Table>
               </div>
               
-              <div className="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                  Showing {users.length} of {totalUsers} users
-                </div>
-                
-                {totalPages > 1 && (
-                  <Pagination className="mb-0">
-                    <Pagination.First disabled={currentPage === 1} onClick={() => handlePageChange(1)} />
-                    <Pagination.Prev disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} />
-                    
-                    {[...Array(totalPages).keys()].map(page => {
-                      const pageNumber = page + 1;
-                      // Only show a few pages around current page for better UI
-                      if (
-                        pageNumber === 1 || 
-                        pageNumber === totalPages || 
-                        Math.abs(pageNumber - currentPage) <= 2
-                      ) {
-                        return (
-                          <Pagination.Item 
-                            key={pageNumber} 
-                            active={pageNumber === currentPage}
-                            onClick={() => handlePageChange(pageNumber)}
+              {users.length > 0 && (
+                <Row className="mt-4">
+                  <Col>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div className="d-flex align-items-center">
+                        <span className="me-2">Showing {users.length} of {totalUsers} users</span>
+                        <Form.Group className="d-flex align-items-center">
+                          <Form.Label className="mb-0 me-2">Rows per page:</Form.Label>
+                          <Form.Select 
+                            size="sm" 
+                            value={pageSize}
+                            onChange={(e) => handlePageSizeChange(e.target.value)}
+                            style={{ width: '80px' }}
                           >
-                            {pageNumber}
-                          </Pagination.Item>
-                        );
-                      } else if (
-                        pageNumber === 2 || 
-                        pageNumber === totalPages - 1
-                      ) {
-                        // Show ellipsis for better pagination UI
-                        return <Pagination.Ellipsis key={pageNumber} />;
-                      }
-                      return null;
-                    })}
-                    
-                    <Pagination.Next disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} />
-                    <Pagination.Last disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)} />
-                  </Pagination>
-                )}
-              </div>
+                            <option value="10">10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                          </Form.Select>
+                        </Form.Group>
+                      </div>
+                      <Pagination className="mb-0">
+                        <Pagination.First disabled={currentPage === 1} onClick={() => handlePageChange(1)} />
+                        <Pagination.Prev disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} />
+                        
+                        {[...Array(totalPages).keys()].map(page => {
+                          const pageNumber = page + 1;
+                          // Only show a few pages around current page for better UI
+                          if (
+                            pageNumber === 1 || 
+                            pageNumber === totalPages || 
+                            Math.abs(pageNumber - currentPage) <= 2
+                          ) {
+                            return (
+                              <Pagination.Item 
+                                key={pageNumber} 
+                                active={pageNumber === currentPage}
+                                onClick={() => handlePageChange(pageNumber)}
+                              >
+                                {pageNumber}
+                              </Pagination.Item>
+                            );
+                          } else if (
+                            pageNumber === 2 || 
+                            pageNumber === totalPages - 1
+                          ) {
+                            // Show ellipsis for better pagination UI
+                            return <Pagination.Ellipsis key={pageNumber} />;
+                          }
+                          return null;
+                        })}
+                        
+                        <Pagination.Next disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} />
+                        <Pagination.Last disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)} />
+                      </Pagination>
+                    </div>
+                  </Col>
+                </Row>
+              )}
             </>
           )}
         </Card.Body>
