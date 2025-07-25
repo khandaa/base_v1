@@ -43,6 +43,14 @@ base_v1/
 ```
 
 ## Features
+- **Route Feature Toggles**:
+  - Comprehensive feature toggle system for all application routes
+  - Role-based access control with permission checks
+  - Admin role automatically granted full access to all routes
+  - Other roles granted view-only permissions by default
+  - Frontend routes protected by feature toggle status
+  - SQL migration script for easy setup of all feature toggles
+
 - **Enhanced User Management Interface**:
   - Interactive status toggle buttons for instant user activation/deactivation
   - Visual status indicators with toggle buttons for authorized users
@@ -69,7 +77,13 @@ base_v1/
 
 - **Payment Integration Module**: A comprehensive payment integration system with QR code management and transaction tracking. Admins can upload, activate, and manage payment QR codes through an intuitive UI. The module automatically creates required database tables on initialization.
 
-- **Feature Toggle System**: Admin and Full Access roles can manage feature flags via a dedicated UI and API. Use toggles to enable/disable features for controlled rollout, including the new payment integration module.
+- **Feature Toggle System**: Comprehensive feature management with role-based access control:
+  - **Route-Based Feature Toggles**: All application routes are protected by feature toggles that can be enabled/disabled
+  - **Role-Based Access Control**: Admin users have full access to all routes and features
+  - **Permission Structure**: Non-admin users have view permissions only for enabled routes
+  - **Admin UI**: Admin and Full Access roles can manage feature flags via a dedicated UI
+  - **API Integration**: Complete API for managing feature toggles programmatically
+  - **Controlled Rollout**: Enable/disable features and routes for controlled deployment
 
 - **Activity Logging**: Activity Log page displays timestamps in a readable format and includes a 'IP Address / Port' column, showing the source of each activity if available.
 

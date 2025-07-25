@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import jwt_decode from 'jwt-decode';
 import axios from 'axios';
 import { setAuthToken } from '../services/api';
-import { useNavigate } from 'react-router-dom';
 
 const AuthContext = createContext({
   currentUser: null,
@@ -42,8 +41,6 @@ export const AuthProvider = ({ children }) => {
   const [permissions, setPermissions] = useState([]);
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Verify token and set authentication state
@@ -172,8 +169,8 @@ export const AuthProvider = ({ children }) => {
     // Remove auth header
     delete axios.defaults.headers.common['Authorization'];
     
-    // Redirect to login
-    navigate('/login');
+    // Redirect to login using window.location to avoid router dependency
+    window.location.href = '/login';
   };
 
   const forgotPassword = async (email) => {

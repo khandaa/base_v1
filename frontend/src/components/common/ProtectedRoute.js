@@ -8,7 +8,7 @@ import { useAuth } from '../../contexts/AuthContext';
  * If the user is authenticated, it renders the children components
  * Otherwise, it redirects to the login page
  */
-const ProtectedRoute = ({ children, requiredPermissions = [], requiredRoles = [] }) => {
+const ProtectedRoute = ({ children, element, requiredPermissions = [], requiredRoles = [], allowedRoles = [] }) => {
   // Use a try-catch to safely access auth context
   try {
     const auth = useAuth();
@@ -52,21 +52,22 @@ const ProtectedRoute = ({ children, requiredPermissions = [], requiredRoles = []
     }
     
     // Check if user has required roles (if any)
-    if (requiredRoles.length > 0) {
+    const rolesToCheck = [...requiredRoles, ...allowedRoles];
+    if (rolesToCheck.length > 0) {
       // Make sure hasRole is a function
       if (typeof hasRole !== 'function') {
         console.error('hasRole is not a function');
         return <Navigate to="/unauthorized" />;
       }
       
-      const hasRequiredRole = hasRole(requiredRoles);
+      const hasRequiredRole = hasRole(rolesToCheck);
       if (!hasRequiredRole) {
         return <Navigate to="/unauthorized" />;
       }
     }
     
-    // User is authenticated and has required permissions/roles, render children
-    return children;
+    // User is authenticated and has required permissions/roles, render children or element
+    return element || children;
   } catch (error) {
     console.error('Error in ProtectedRoute:', error);
     return <Navigate to="/login" />;

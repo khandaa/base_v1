@@ -4,6 +4,7 @@ import './index.css';
 import App from './App';
 import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { FeatureToggleProvider } from './contexts/FeatureToggleContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'react-toastify/dist/ReactToastify.css';
 import './styles/glassmorphism.css';
@@ -14,8 +15,10 @@ root.render(
   <React.StrictMode>
     <Router>
       <AuthProvider>
-        <App />
-        <ToastContainer position="top-right" autoClose={3000} />
+        <FeatureToggleProvider>
+          <App />
+          <ToastContainer position="top-right" autoClose={3000} />
+        </FeatureToggleProvider>
       </AuthProvider>
     </Router>
   </React.StrictMode>

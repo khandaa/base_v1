@@ -167,7 +167,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);  // Empty dependency array to run only once on mount
+  }, [hasAnyPermission, canAccessAnyCard, hasPermission]);  // Include necessary dependencies
 
   // Chart options
   const lineChartOptions = {

@@ -1,6 +1,17 @@
 ## [Unreleased]
 
 ### 2025-07-25
+- Implemented route feature toggles for access control across application
+  - Added feature toggle functionality for all application routes
+  - Implemented role-based access with admin having full access
+  - Other roles granted view permissions for applicable routes
+  - Created script to initialize all route feature toggles in database
+  - Added context-based feature toggle system for frontend routes
+
+- Added script for bulk updating user mobile numbers and roles from CSV file
+  - Created utility script to process CSV data and update existing users
+  - Supports updating mobile numbers and assigning new roles in batch
+  - Provides detailed logging and success/failure reporting
 - Added interactive status toggle in user management table
   - Converted static status badges to interactive toggle buttons
   - Added ability to instantly activate/deactivate users with a single click
