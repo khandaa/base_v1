@@ -1,6 +1,8 @@
 ## [Unreleased]
 
 ### 2025-07-25
+- Added column-based filtering and sorting capabilities to UserList and RoleList components
+- Added 20 new users (5 each for Director, Senior Manager, Manager, and Article roles)
 - Fixed role creation and edit functionality by correcting API payload field from 'permission_ids' to 'permissions'
 - Enhanced dashboard UI to display components based on user's role and permissions
 - Added permission-based filtering for dashboard cards (Users, Roles, Permissions, Activities)

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Pagination, Dropdown, Modal } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaUser, FaToggleOn, FaToggleOff, FaUserTag } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaUser, FaToggleOn, FaToggleOff, FaUserTag, FaFilter, FaSort } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { userAPI, roleAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -17,6 +17,19 @@ const UserList = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
   const [savingRole, setSavingRole] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [filters, setFilters] = useState({
+    name: '',
+    email: '',
+    mobile: '',
+    role: '',
+    status: ''
+  });
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'asc'
+  });
+  const [showFilters, setShowFilters] = useState(false);
   const pageSize = 10;
   
   const { hasPermission } = useAuth();
@@ -57,9 +70,15 @@ const UserList = () => {
       
       const response = await userAPI.getUsers(params);
       
-      setUsers(response.data.users);
+      // Store all users for client-side filtering
+      const fetchedUsers = response.data.users;
+      setAllUsers(fetchedUsers);
+      setUsers(fetchedUsers);
       setTotalUsers(response.data.total);
       setTotalPages(Math.ceil(response.data.total / pageSize));
+      
+      // Apply any existing filters
+      applyFilters(fetchedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users. Please try again.');
@@ -111,6 +130,129 @@ const UserList = () => {
     e.preventDefault();
     setCurrentPage(1); // Reset to first page on new search
     fetchUsers();
+  };
+  
+  // Apply client-side filters
+  const applyFilters = (usersToFilter = allUsers) => {
+    if (!usersToFilter || usersToFilter.length === 0) return;
+    
+    let filteredResults = [...usersToFilter];
+    
+    // Apply name filter
+    if (filters.name) {
+      filteredResults = filteredResults.filter(user => {
+        const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+        return fullName.includes(filters.name.toLowerCase());
+      });
+    }
+    
+    // Apply email filter
+    if (filters.email) {
+      filteredResults = filteredResults.filter(user => 
+        user.email.toLowerCase().includes(filters.email.toLowerCase())
+      );
+    }
+    
+    // Apply mobile filter
+    if (filters.mobile) {
+      filteredResults = filteredResults.filter(user => 
+        user.mobile_number && user.mobile_number.includes(filters.mobile)
+      );
+    }
+    
+    // Apply role filter
+    if (filters.role) {
+      filteredResults = filteredResults.filter(user => 
+        user.roles && user.roles.some(role => 
+          role.name.toLowerCase().includes(filters.role.toLowerCase())
+        )
+      );
+    }
+    
+    // Apply status filter
+    if (filters.status) {
+      const isActive = filters.status.toLowerCase() === 'active';
+      filteredResults = filteredResults.filter(user => user.is_active === isActive);
+    }
+    
+    // Apply sorting
+    if (sortConfig.key) {
+      filteredResults.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (sortConfig.key) {
+          case 'name':
+            aValue = `${a.first_name} ${a.last_name}`;
+            bValue = `${b.first_name} ${b.last_name}`;
+            break;
+          case 'email':
+            aValue = a.email || '';
+            bValue = b.email || '';
+            break;
+          case 'mobile':
+            aValue = a.mobile_number || '';
+            bValue = b.mobile_number || '';
+            break;
+          case 'status':
+            aValue = a.is_active;
+            bValue = b.is_active;
+            break;
+          case 'created':
+            aValue = new Date(a.created_at);
+            bValue = new Date(b.created_at);
+            break;
+          default:
+            aValue = a[sortConfig.key];
+            bValue = b[sortConfig.key];
+        }
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    
+    setUsers(filteredResults);
+  };
+  
+  // Handle column header click for sorting
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+    applyFilters(); // Re-apply filters with the new sort configuration
+  };
+  
+  // Handle filter change
+  const handleFilterChange = (field, value) => {
+    const newFilters = { ...filters, [field]: value };
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+  
+  // Apply filters when filters state changes
+  useEffect(() => {
+    applyFilters();
+  }, [filters, sortConfig]);
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({
+      name: '',
+      email: '',
+      mobile: '',
+      role: '',
+      status: ''
+    });
+    setShowFilters(false);
+    setSortConfig({ key: null, direction: 'asc' });
+    setUsers(allUsers);
   };
 
   const handlePageChange = (pageNumber) => {
@@ -208,7 +350,91 @@ const UserList = () => {
                 </InputGroup>
               </Form>
             </Col>
+            <Col md={6} className="text-end">
+              <Button 
+                variant={showFilters ? "primary" : "outline-primary"} 
+                className="me-2" 
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <FaFilter className="me-1" /> {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </Button>
+              {showFilters && (
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={clearFilters}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </Col>
           </Row>
+          
+          {showFilters && (
+            <Row className="mb-3 g-2">
+              <Col sm={6} md={2}>
+                <Form.Group>
+                  <Form.Label>Name</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Filter by name"
+                    value={filters.name}
+                    onChange={(e) => handleFilterChange('name', e.target.value)}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6} md={2}>
+                <Form.Group>
+                  <Form.Label>Email</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Filter by email"
+                    value={filters.email}
+                    onChange={(e) => handleFilterChange('email', e.target.value)}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6} md={2}>
+                <Form.Group>
+                  <Form.Label>Mobile</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Filter by mobile"
+                    value={filters.mobile}
+                    onChange={(e) => handleFilterChange('mobile', e.target.value)}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6} md={2}>
+                <Form.Group>
+                  <Form.Label>Role</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Filter by role"
+                    value={filters.role}
+                    onChange={(e) => handleFilterChange('role', e.target.value)}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6} md={2}>
+                <Form.Group>
+                  <Form.Label>Status</Form.Label>
+                  <Form.Select 
+                    value={filters.status}
+                    onChange={(e) => handleFilterChange('status', e.target.value)}
+                    size="sm"
+                  >
+                    <option value="">All</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+          )}
           
           {loading ? (
             <div className="text-center py-5">
@@ -223,12 +449,32 @@ const UserList = () => {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Mobile</th>
+                      <th onClick={() => handleSort('name')} className="cursor-pointer">
+                        Name {sortConfig.key === 'name' && (
+                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                        )}
+                      </th>
+                      <th onClick={() => handleSort('email')} className="cursor-pointer">
+                        Email {sortConfig.key === 'email' && (
+                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                        )}
+                      </th>
+                      <th onClick={() => handleSort('mobile')} className="cursor-pointer">
+                        Mobile {sortConfig.key === 'mobile' && (
+                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                        )}
+                      </th>
                       <th>Roles</th>
-                      <th>Status</th>
-                      <th>Created Date</th>
+                      <th onClick={() => handleSort('status')} className="cursor-pointer">
+                        Status {sortConfig.key === 'status' && (
+                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                        )}
+                      </th>
+                      <th onClick={() => handleSort('created')} className="cursor-pointer">
+                        Created Date {sortConfig.key === 'created' && (
+                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                        )}
+                      </th>
                       <th>Actions</th>
                     </tr>
                   </thead>

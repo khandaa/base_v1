@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styles from './RoleList.module.css';
 import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Modal, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt, FaCloudUploadAlt, FaKey } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt, FaCloudUploadAlt, FaKey, FaFilter, FaSort } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { roleAPI, permissionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -18,6 +18,16 @@ const RoleList = () => {
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [selectedPermissionIds, setSelectedPermissionIds] = useState([]);
   const [permissionsLoading, setPermissionsLoading] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    name: '',
+    description: '',
+    permission: ''
+  });
+  const [sortConfig, setSortConfig] = useState({
+    key: null,
+    direction: 'asc'
+  });
   
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -52,16 +62,76 @@ const RoleList = () => {
   };
 
   useEffect(() => {
-    if (roles.length > 0 && searchTerm) {
-      const filtered = roles.filter(role => 
-        role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        role.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    if (roles.length > 0) {
+      let filtered = [...roles];
+      
+      // Apply search term filter
+      if (searchTerm) {
+        filtered = filtered.filter(role => 
+          role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          role.description.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      
+      // Apply other filters
+      if (filters.name) {
+        filtered = filtered.filter(role =>
+          role.name.toLowerCase().includes(filters.name.toLowerCase())
+        );
+      }
+      
+      if (filters.description) {
+        filtered = filtered.filter(role =>
+          role.description.toLowerCase().includes(filters.description.toLowerCase())
+        );
+      }
+      
+      if (filters.permission) {
+        filtered = filtered.filter(role =>
+          role.permissions && role.permissions.some(permission =>
+            permission.name.toLowerCase().includes(filters.permission.toLowerCase())
+          )
+        );
+      }
+      
+      // Apply sorting
+      if (sortConfig.key) {
+        filtered.sort((a, b) => {
+          let aValue, bValue;
+          
+          switch (sortConfig.key) {
+            case 'name':
+              aValue = a.name || '';
+              bValue = b.name || '';
+              break;
+            case 'description':
+              aValue = a.description || '';
+              bValue = b.description || '';
+              break;
+            case 'permissions':
+              aValue = a.permissions ? a.permissions.length : 0;
+              bValue = b.permissions ? b.permissions.length : 0;
+              break;
+            default:
+              aValue = a[sortConfig.key];
+              bValue = b[sortConfig.key];
+          }
+          
+          if (aValue < bValue) {
+            return sortConfig.direction === 'asc' ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        });
+      }
+      
       setFilteredRoles(filtered);
     } else {
-      setFilteredRoles(roles);
+      setFilteredRoles([]);
     }
-  }, [roles, searchTerm]);
+  }, [roles, searchTerm, filters, sortConfig]);
 
   const fetchRoles = async () => {
     try {
@@ -113,6 +183,33 @@ const RoleList = () => {
 
   const handleSearch = (e) => {
     setSearchTerm(e.target.value);
+  };
+  
+  // Handle column header click for sorting
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  // Handle filter change
+  const handleFilterChange = (field, value) => {
+    const newFilters = { ...filters, [field]: value };
+    setFilters(newFilters);
+  };
+  
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({
+      name: '',
+      description: '',
+      permission: ''
+    });
+    setSearchTerm('');
+    setSortConfig({ key: null, direction: 'asc' });
+    setShowFilters(false);
   };
 
   // Handle opening permission edit modal
@@ -216,7 +313,7 @@ const RoleList = () => {
               )}
             </Col>
           </Row>
-          <Row>
+          <Row className="mb-3">
             <Col md={6}>
               <h6>Search Roles</h6>
               <InputGroup>
@@ -231,7 +328,66 @@ const RoleList = () => {
                 </Button>
               </InputGroup>
             </Col>
+            <Col md={6} className="text-end">
+              <Button 
+                variant={showFilters ? "primary" : "outline-primary"} 
+                className="me-2 glass-btn" 
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <FaFilter className="me-1" /> {showFilters ? 'Hide Filters' : 'Show Filters'}
+              </Button>
+              {showFilters && (
+                <Button 
+                  variant="outline-secondary" 
+                  onClick={clearFilters}
+                  className="glass-btn"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </Col>
           </Row>
+          
+          {showFilters && (
+            <Row className="mb-3 g-2">
+              <Col sm={6} md={4}>
+                <Form.Group>
+                  <Form.Label>Role Name</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Filter by role name"
+                    value={filters.name}
+                    onChange={(e) => handleFilterChange('name', e.target.value)}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6} md={4}>
+                <Form.Group>
+                  <Form.Label>Description</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Filter by description"
+                    value={filters.description}
+                    onChange={(e) => handleFilterChange('description', e.target.value)}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+              <Col sm={6} md={4}>
+                <Form.Group>
+                  <Form.Label>Permission</Form.Label>
+                  <Form.Control 
+                    type="text" 
+                    placeholder="Filter by permission"
+                    value={filters.permission}
+                    onChange={(e) => handleFilterChange('permission', e.target.value)}
+                    size="sm"
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          )}
           
           {loading ? (
             <div className="text-center py-5">
@@ -245,9 +401,21 @@ const RoleList = () => {
                 <thead>
                   <tr>
                     <th width="5%">#</th>
-                    <th width="20%">Role Name</th>
-                    <th width="30%">Description</th>
-                    <th width="25%">Permissions</th>
+                    <th width="20%" onClick={() => handleSort('name')} className="cursor-pointer">
+                      Role Name {sortConfig.key === 'name' && (
+                        <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                      )}
+                    </th>
+                    <th width="30%" onClick={() => handleSort('description')} className="cursor-pointer">
+                      Description {sortConfig.key === 'description' && (
+                        <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                      )}
+                    </th>
+                    <th width="25%" onClick={() => handleSort('permissions')} className="cursor-pointer">
+                      Permissions {sortConfig.key === 'permissions' && (
+                        <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                      )}
+                    </th>
                     <th style={{minWidth: '135px'}}>Actions</th>
                   </tr>
                 </thead>
