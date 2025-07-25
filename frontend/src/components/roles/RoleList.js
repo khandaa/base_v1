@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import styles from './RoleList.module.css';
 import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Modal, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaUserTag, FaShieldAlt, FaCloudUploadAlt, FaKey, FaFilter, FaSort } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaShieldAlt, FaSearch, FaFilter, FaEllipsisV, FaKey, FaSort } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { roleAPI, permissionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,6 +31,10 @@ const RoleList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalRoles, setTotalRoles] = useState(0);
+  const [selectedRoles, setSelectedRoles] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [selectAll, setSelectAll] = useState(false);
   
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -41,8 +45,11 @@ const RoleList = () => {
 
   useEffect(() => {
     fetchRoles();
+  }, [fetchRoles]);
+
+  useEffect(() => {
     fetchPermissions();
-  }, [currentPage, pageSize]);
+  }, []);
   
   // Fetch all available permissions
   const fetchPermissions = async () => {
@@ -67,27 +74,40 @@ const RoleList = () => {
   const fetchRoles = async () => {
     try {
       setLoading(true);
-      const response = await roleAPI.getRoles();
       
-      if (response.data && response.data.roles) {
-        // Backend returns { count, roles } structure
-        setRoles(response.data.roles);
-        setTotalRoles(response.data.roles.length);
-      } else if (Array.isArray(response.data)) {
-        // Handle case where response might be an array directly
-        setRoles(response.data);
-        setTotalRoles(response.data.length);
-      } else {
-        console.error('Unexpected response format:', response.data);
-        toast.error('Received invalid data format from server');
-        setRoles([]);
-        setTotalRoles(0);
+      // Prepare API request parameters
+      const params = {
+        page: currentPage,
+        limit: pageSize,
+        // Add other filter params if needed
+      };
+      
+      const response = await roleAPI.getRoles(params);
+      
+      if (response.data) {
+        // Determine the structure of the response
+        if (Array.isArray(response.data)) {
+          // API returns array directly
+          setRoles(response.data);
+          setTotalRoles(response.data.length);
+        } else if (response.data.roles) {
+          // API returns { roles: [...], total: number }
+          setRoles(response.data.roles);
+          setTotalRoles(response.data.total || response.data.roles.length);
+        } else {
+          console.error('Unexpected response format:', response.data);
+          toast.error('Received unexpected data format from server');
+          setRoles([]);
+        }
       }
+      
+      // Clear selections when fetching new roles
+      setSelectedRoles([]);
+      setSelectAll(false);
     } catch (error) {
       console.error('Error fetching roles:', error);
       toast.error('Failed to load roles. Please try again.');
       setRoles([]);
-      setTotalRoles(0);
     } finally {
       setLoading(false);
     }
@@ -173,33 +193,6 @@ const RoleList = () => {
     }
   }, [roles, searchTerm, filters, sortConfig, currentPage, pageSize]);
 
-  const fetchRoles = async () => {
-    try {
-      setLoading(true);
-      const response = await roleAPI.getRoles();
-      console.log('Roles API response:', response.data);
-      if (response.data && response.data.roles) {
-        // Backend returns { count, roles } structure
-        setRoles(response.data.roles);
-        setFilteredRoles(response.data.roles);
-      } else if (Array.isArray(response.data)) {
-        // Handle case where response might be an array directly
-        setRoles(response.data);
-        setFilteredRoles(response.data);
-      } else {
-        console.error('Unexpected response format:', response.data);
-        toast.error('Received invalid data format from server');
-        setRoles([]);
-        setFilteredRoles([]);
-      }
-    } catch (error) {
-      console.error('Error fetching roles:', error);
-      toast.error('Failed to load roles. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleDeleteRole = async (roleId, roleName) => {
     // Prevent deletion of system roles
     if (['Admin', 'System'].includes(roleName)) {
@@ -278,8 +271,11 @@ const RoleList = () => {
     setShowPermissionModal(true);
   };
   
+  // Memoize permissions for performance
+  const permissionsMemo = useMemo(() => permissions, [permissions]);
+  
   // Group permissions by category for better organization in modal
-  const groupedPermissions = permissions.reduce((acc, permission) => {
+  const groupedPermissions = permissionsMemo.reduce((acc, permission) => {
     const category = permission.name.split('_')[0]; // Assuming permissions are named like "user_create"
     if (!acc[category]) {
       acc[category] = [];
@@ -305,17 +301,17 @@ const RoleList = () => {
       setSavingPermissions(true);
       
       await permissionAPI.assignPermissions(selectedRole.role_id, selectedPermissionIds);
-      
+
       // Update the role in local state with new permissions
       const updatedPermissions = permissions.filter(p => selectedPermissionIds.includes(p.permission_id));
-      
+
       setRoles(roles.map(role => {
         if (role.role_id === selectedRole.role_id) {
           return { ...role, permissions: updatedPermissions };
         }
         return role;
       }));
-      
+
       // Also update filtered roles
       setFilteredRoles(filteredRoles.map(role => {
         if (role.role_id === selectedRole.role_id) {
@@ -323,7 +319,7 @@ const RoleList = () => {
         }
         return role;
       }));
-      
+
       toast.success(`Permissions updated for ${selectedRole.name}`);
       setShowPermissionModal(false);
     } catch (error) {
@@ -334,39 +330,119 @@ const RoleList = () => {
     }
   };
 
+  // Handle selecting individual roles
+  const handleSelectRole = (roleId) => {
+    // Check if the role is a system role (Admin or System)
+    const role = roles.find(r => r.role_id === roleId);
+    if (role && ['Admin', 'System'].includes(role.name)) {
+      toast.warning(`The ${role.name} role is a system role and cannot be selected for bulk operations.`);
+      return;
+    }
+
+    setSelectedRoles(prev => {
+      if (prev.includes(roleId)) {
+        return prev.filter(id => id !== roleId);
+      } else {
+        return [...prev, roleId];
+      }
+    });
+
+    // Update selectAll state if needed
+    if (selectAll && filteredRoles.length > 0) {
+      setSelectAll(false);
+    }
+  };
+
+  // Handle bulk delete action
+  const handleBulkDelete = async () => {
+    if (selectedRoles.length === 0) return;
+    
+    // Filter out system roles
+    const systemRoleIds = roles
+      .filter(role => ['Admin', 'System'].includes(role.name))
+      .map(role => role.role_id);
+    
+    const deletableRoleIds = selectedRoles.filter(id => !systemRoleIds.includes(id));
+    
+    // If all selected roles are system roles, show error
+    if (deletableRoleIds.length === 0) {
+      toast.error('Cannot delete system roles');
+      setShowBulkDeleteModal(false);
+      return;
+    }
+    
+    try {
+      setBulkActionLoading(true);
+      
+      // Make API call to delete multiple roles
+      await roleAPI.bulkDeleteRoles(deletableRoleIds);
+      
+      toast.success(`Successfully deleted ${deletableRoleIds.length} roles`);
+      setShowBulkDeleteModal(false);
+      setSelectedRoles([]);
+      setSelectAll(false);
+      fetchRoles(); // Refresh the list
+      
+      // If some roles were not deleted because they're system roles, show warning
+      if (deletableRoleIds.length < selectedRoles.length) {
+        toast.warning(`${selectedRoles.length - deletableRoleIds.length} system roles were not deleted`);
+      }
+    } catch (error) {
+      console.error('Error deleting roles:', error);
+      toast.error('Failed to delete roles. They may be assigned to users or have other dependencies.');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Handle select all roles
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedRoles([]);
+    } else {
+      setSelectedRoles(filteredRoles.map(role => role.role_id));
+    }
+    setSelectAll(!selectAll);
+  };
+
   return (
     <Container fluid>
       <Card className="mb-4 glass-card">
         <Card.Body>
-          <Row className="mb-4">
+          <Row className="mb-3">
             <Col md={6}>
-              <h2>Role Management</h2>
+              <h2 className={styles.title}>
+                <FaShieldAlt className="me-2" /> Role Management
+              </h2>
               <p className="text-muted">Manage system roles and their permissions</p>
             </Col>
             <Col md={6} className="text-md-end">
-              {canCreateRole && (
-                <>
+              <div className="d-flex gap-2 justify-content-end">
+                {selectedRoles.length > 0 && canDeleteRole && (
                   <Button 
-                    variant="outline-primary" 
-                    as={Link} 
-                    to="/roles/bulk-upload"
-                    className="d-inline-flex align-items-center me-2 glass-btn"
+                    variant="danger" 
+                    onClick={() => setShowBulkDeleteModal(true)}
+                    className="d-inline-flex align-items-center"
+                    disabled={bulkActionLoading}
                   >
-                    <FaCloudUploadAlt className="me-2" /> Bulk Upload
+                    <FaTrash className="me-2" /> Delete Selected ({selectedRoles.length})
                   </Button>
+                )}
+                
+                {canCreateRole && (
                   <Button 
                     variant="primary" 
                     as={Link} 
                     to="/roles/create"
-                    className="d-inline-flex align-items-center glass-btn glass-btn-primary"
+                    className="d-inline-flex align-items-center"
                   >
                     <FaPlus className="me-2" /> Add New Role
                   </Button>
-                </>
-              )}
+                )}
+              </div>
             </Col>
           </Row>
-          <Row className="mb-3">
+          <Row className="mb-4">
             <Col md={6}>
               <h6>Search Roles</h6>
               <InputGroup>
@@ -450,100 +526,91 @@ const RoleList = () => {
             </div>
           ) : (
             <div className="table-responsive table-container glass-table">
-              <Table hover className="align-middle">
+              <Table hover responsive>
                 <thead>
                   <tr>
-                    <th width="5%">#</th>
-                    <th width="20%" onClick={() => handleSort('name')} className="cursor-pointer">
+                    <th style={{width: '40px'}}>
+                      <Form.Check
+                        type="checkbox"
+                        checked={selectAll}
+                        onChange={handleSelectAll}
+                        aria-label="Select all roles"
+                        disabled={filteredRoles.length === 0}
+                      />
+                    </th>
+                    <th onClick={() => handleSort('name')} style={{cursor: 'pointer'}}>
                       Role Name {sortConfig.key === 'name' && (
-                        <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                        <FaSort className={sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'} />
                       )}
                     </th>
-                    <th width="30%" onClick={() => handleSort('description')} className="cursor-pointer">
+                    <th onClick={() => handleSort('description')} style={{cursor: 'pointer'}}>
                       Description {sortConfig.key === 'description' && (
-                        <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
+                        <FaSort className={sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'} />
                       )}
                     </th>
-                    <th width="25%" onClick={() => handleSort('permissions')} className="cursor-pointer">
-                      Permissions {sortConfig.key === 'permissions' && (
-                        <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
-                      )}
-                    </th>
-                    <th style={{minWidth: '135px'}}>Actions</th>
+                    <th>Permissions</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRoles.length > 0 ? (
                     filteredRoles.map((role, index) => (
                       <tr key={role.role_id}>
-                        <td>{index + 1}</td>
-                        <td className={styles.roleNameCell}>
-  <Link to={`/roles/${role.role_id}`} className={styles.roleName} style={{ textDecoration: 'underline', color: '#0d6efd', cursor: 'pointer' }}>
-    {role.name}
-  </Link>
-  {['Admin', 'System'].includes(role.name) && (
-    <Badge bg="secondary" className="ms-2">System</Badge>
-  )}
-</td>
-                        <td>{role.description}</td>
                         <td>
-  {role.permissions && role.permissions.length > 0 ? (
-    <div className={styles.permissionBadges}>
-      {role.permissions.slice(0, 3).map(permission => (
-        <Badge key={permission.permission_id} bg="secondary" className="badge-permission glass-badge">
-          {permission.name}
-        </Badge>
-      ))}
-      {role.permissions.length > 3 && (
-        <Badge className={styles.badgeMore}>
-          +{role.permissions.length - 3} more
-        </Badge>
-      )}
-    </div>
-  ) : (
-    <span className="text-muted">No permissions</span>
-  )}
-</td>
+                          <Form.Check
+                            type="checkbox"
+                            checked={selectedRoles.includes(role.role_id)}
+                            onChange={() => handleSelectRole(role.role_id)}
+                            aria-label={`Select role ${role.name}`}
+                            // Disable checkbox for system roles
+                            disabled={['Admin', 'System'].includes(role.name)}
+                          />
+                        </td>
+                        <td>{role.name}</td>
+                        <td>{role.description || 'No description'}</td>
                         <td>
-  <div className={styles.actionButtons}>
-    {canEditRole ? (
-      <>
-        <Button 
-          variant="primary" 
-          size="sm" 
-          className="glass-btn" 
-          onClick={() => navigate(`/roles/edit/${role.role_id}`)} 
-          title="Edit role"
-        >
-          <FaEdit className="me-1" /> Edit Role
-        </Button>
-        <Button 
-          variant="outline-info" 
-          size="sm" 
-          className="glass-btn" 
-          onClick={() => handleShowPermissionModal(role)} 
-          title="Edit permissions"
-        >
-          <FaKey />
-        </Button>
-      </>
-    ) : null}
-    {canDeleteRole && !['Admin', 'System'].includes(role.name) ? (
-      <Button 
-        variant="outline-danger" 
-        size="sm" 
-        onClick={() => handleDeleteRole(role.role_id, role.name)}
-        title="Delete role"
-        className="glass-btn"
-      >
-        <FaTrash />
-      </Button>
-    ) : null}
-    {!(canEditRole || (canDeleteRole && !['Admin', 'System'].includes(role.name))) && (
-      <span style={{minWidth: '36px', display: 'inline-block'}}></span>
-    )}
-  </div>
-</td>
+                          <div className="d-flex align-items-center">
+                            <Badge bg="info" className="me-2">
+                              {role.permissions ? role.permissions.length : 0}
+                            </Badge>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleShowPermissionModal(role)}
+                            >
+                              <FaKey className="me-1" /> Manage
+                            </Button>
+                          </div>
+                        </td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            {canEditRole ? (
+                              <Button 
+                                variant="primary" 
+                                size="sm" 
+                                className="glass-btn" 
+                                onClick={() => navigate(`/roles/edit/${role.role_id}`)} 
+                                title="Edit role"
+                              >
+                                <FaEdit className="me-1" /> Edit Role
+                              </Button>
+                            ) : null}
+                            {canDeleteRole && !['Admin', 'System'].includes(role.name) ? (
+                              <Button 
+                                variant="outline-danger" 
+                                size="sm" 
+                                onClick={() => handleDeleteRole(role.role_id, role.name)}
+                                title="Delete role"
+                                className="glass-btn"
+                              >
+                                <FaTrash />
+                              </Button>
+                            ) : null}
+                            {!(canEditRole || (canDeleteRole && !['Admin', 'System'].includes(role.name))) && (
+                              <span style={{minWidth: '36px', display: 'inline-block'}}></span>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))
                   ) : (
@@ -668,32 +735,7 @@ const RoleList = () => {
         </Card.Body>
       </Card>
       
-      <Card className="glass-card mb-4">
-        <Card.Header>
-          <h5 className="mb-0">About Roles</h5>
-        </Card.Header>
-        <Card.Body>
-          <Row>
-            <Col md={6}>
-              <h6>What are roles?</h6>
-              <p className="text-muted">
-                Roles are collections of permissions that define what actions users can perform in the system.
-                Each user can be assigned multiple roles, and their effective permissions are the combination
-                of all permissions from their assigned roles.
-              </p>
-            </Col>
-            <Col md={6}>
-              <h6>System Roles</h6>
-              <p className="text-muted">
-                System roles like "Admin" and "System" cannot be deleted as they are essential for system operation.
-                The Admin role has all permissions by default. Be careful when modifying system roles as it may affect system functionality.
-              </p>
-            </Col>
-          </Row>
-        </Card.Body>
-      </Card>
-      
-      {/* Permission Edit Modal */}
+      {/* Permission Modal */}
       <Modal 
         show={showPermissionModal} 
         onHide={() => setShowPermissionModal(false)}
@@ -702,86 +744,106 @@ const RoleList = () => {
         className="glass-modal-container"
       >
         <div className="glass-modal">
-        <Modal.Header closeButton>
-          <Modal.Title>
-            Edit Permissions for {selectedRole?.name}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-          {permissionsLoading ? (
-            <div className="text-center py-4">
-              <div className="spinner-border text-primary" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-            </div>
-          ) : (
-            <>
-              {selectedRole && selectedRole.name && ['Admin', 'System'].includes(selectedRole.name) && (
-                <Alert variant="warning" className="mb-3">
-                  <FaShieldAlt className="me-2" />
-                  This is a system role. Be careful when modifying its permissions as it may affect system functionality.
-                </Alert>
+          <Modal.Header closeButton>
+            <Modal.Title>
+              {selectedRole && (
+                <span>Edit Permissions for <strong>{selectedRole.name}</strong></span>
               )}
-              
-              {Object.entries(groupedPermissions).sort().map(([category, categoryPermissions]) => (
-                <div key={category} className="mb-4">
-                  <h5 className="text-capitalize">{category}</h5>
-                  <hr />
-                  <Row>
-                    {categoryPermissions.map(permission => {
-                      const isChecked = selectedPermissionIds.includes(permission.permission_id);
-                      return (
-                        <Col md={4} key={permission.permission_id} className="mb-2">
-                          <Form.Check 
-                            type="checkbox"
-                            id={`permission-${permission.permission_id}`}
-                            label={permission.name}
-                            checked={isChecked}
-                            className="glass-checkbox"
-                            onChange={(e) => handlePermissionChange(permission.permission_id, e.target.checked)}
-                          />
-                        </Col>
-                      );
-                    })}
-                  </Row>
+            </Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            {permissionsLoading ? (
+              <div className="text-center py-4">
+                <div className="spinner-border text-primary" role="status">
+                  <span className="visually-hidden">Loading...</span>
                 </div>
-              ))}
-              
-              {Object.keys(groupedPermissions).length === 0 && (
-                <Alert variant="info">
-                  No permissions available.
-                </Alert>
-              )}
-            </>
+                <p className="mt-2">Loading permissions...</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-3">
+                  <div className="d-flex justify-content-between align-items-center mb-2">
+                    <h6>Select Permissions</h6>
+                  </div>
+                </div>
+                
+                <Form>
+                  <Row>
+                    {permissionsMemo.map(permission => (
+                      <Col md={4} key={permission.permission_id} className="mb-2">
+                        <Form.Check
+                          type="checkbox"
+                          id={`permission-${permission.permission_id}`}
+                          label={permission.name}
+                          checked={selectedPermissionIds.includes(permission.permission_id)}
+                          onChange={() => {
+                            if (selectedPermissionIds.includes(permission.permission_id)) {
+                              setSelectedPermissionIds(prev => 
+                                prev.filter(id => id !== permission.permission_id)
+                              );
+                            } else {
+                              setSelectedPermissionIds(prev => 
+                                [...prev, permission.permission_id]
+                              );
+                            }
+                          }}
+                        />
+                      </Col>
+                    ))}
+                  </Row>
+                </Form>
+              </>
+            )}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowPermissionModal(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSavePermissions}
+              disabled={savingPermissions}
+            >
+              {savingPermissions ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </Modal.Footer>
+        </div>
+      </Modal>
+      
+      {/* Bulk Delete Modal */}
+      <Modal show={showBulkDeleteModal} onHide={() => setShowBulkDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Multiple Roles</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to delete {selectedRoles.length} selected roles? This action cannot be undone.</p>
+          
+          {/* Check if any selected roles are system roles */}
+          {selectedRoles.some(roleId => {
+            const role = roles.find(r => r.role_id === roleId);
+            return role && ['Admin', 'System'].includes(role.name);
+          }) && (
+            <Alert variant="warning">
+              <strong>Note:</strong> System roles (Admin, System) cannot be deleted and will be skipped.
+            </Alert>
           )}
+          
+          <Alert variant="danger">
+            <strong>Warning:</strong> Deleting roles may impact user permissions across the system.
+          </Alert>
         </Modal.Body>
         <Modal.Footer>
-          <div className="d-flex justify-content-between w-100">
-            <div>
-              <Badge bg="primary" className="me-2 glass-badge">
-                {selectedPermissionIds.length} permissions selected
-              </Badge>
-            </div>
-            <div>
-              <Button 
-                variant="secondary" 
-                onClick={() => setShowPermissionModal(false)}
-                className="me-2 glass-btn"
-              >
-                Cancel
-              </Button>
-              <Button 
-                variant="primary" 
-                onClick={handleSavePermissions}
-                disabled={savingPermissions}
-                className="glass-btn glass-btn-primary"
-              >
-                {savingPermissions ? 'Saving...' : 'Save Permissions'}
-              </Button>
-            </div>
-          </div>
+          <Button variant="secondary" onClick={() => setShowBulkDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={handleBulkDelete}
+            disabled={bulkActionLoading}
+          >
+            {bulkActionLoading ? 'Deleting...' : `Delete Selected Roles`}
+          </Button>
         </Modal.Footer>
-        </div>
       </Modal>
     </Container>
   );

@@ -43,9 +43,19 @@ base_v1/
 ```
 
 ## Features
+- **Multi-Selection and Bulk Operations**: Efficiently manage users and roles with powerful bulk operations:
+  - Select multiple users or roles with checkbox selection and "select all" capability
+  - Perform bulk deletion of users and roles with confirmation dialogs
+  - Assign roles to multiple users simultaneously
+  - Toggle status (activate/deactivate) for multiple users at once
+  - System protection prevents deletion of critical system roles (Admin, System)
+  - Clear UI feedback with toast notifications for all operations
+
 - **Payment Integration Module**: A comprehensive payment integration system with QR code management and transaction tracking. Admins can upload, activate, and manage payment QR codes through an intuitive UI. The module automatically creates required database tables on initialization.
+
 - **Feature Toggle System**: Admin and Full Access roles can manage feature flags via a dedicated UI and API. Use toggles to enable/disable features for controlled rollout, including the new payment integration module.
-- Activity Log page now displays timestamps in a readable format and includes a new 'IP Address / Port' column, showing the source of each activity if available.
+
+- **Activity Logging**: Activity Log page displays timestamps in a readable format and includes a 'IP Address / Port' column, showing the source of each activity if available.
 
 - **2025-07-10:** Fixed JSX syntax errors in `frontend/src/components/roles/RoleList.js` (missing/mismatched `<tr>` closing tag and action button structure) that caused rendering issues on the Roles List page.
 - **2025-07-10:** Improved the Role Management table UI for clarity and modern appearance (better alignment, action buttons, permission badges, and custom styles).

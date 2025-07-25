@@ -101,15 +101,20 @@ export const userAPI = {
   downloadUserTemplate: () => api.get('/user_management/users/template', {
     responseType: 'blob'
   }),
+  // Bulk operations
+  bulkDeleteUsers: (userIds) => api.delete('/user_management/users/bulk-delete', { data: { userIds } }),
+  bulkAssignRole: (userIds, roleId) => api.post('/user_management/users/bulk-role', { userIds, roleId }),
+  bulkToggleStatus: (userIds, isActive) => api.patch('/user_management/users/bulk-status', { userIds, is_active: isActive }),
 };
 
 // Role Management API
 export const roleAPI = {
-  getRoles: () => api.get('/role_management/roles'),
+  getRoles: (params) => api.get('/role_management/roles', { params }),
   getRole: (id) => api.get(`/role_management/roles/${id}`),
   createRole: (roleData) => api.post('/role_management/roles', roleData),
   updateRole: (id, roleData) => api.put(`/role_management/roles/${id}`, roleData),
   deleteRole: (id) => api.delete(`/role_management/roles/${id}`),
+  getPermissions: () => api.get('/role_management/permissions'),
   uploadBulkRoles: (formData, onUploadProgress) => {
     return api.post('/role_management/roles/bulk', formData, {
       headers: {
@@ -118,6 +123,8 @@ export const roleAPI = {
       onUploadProgress
     });
   },
+  // Bulk operations
+  bulkDeleteRoles: (roleIds) => api.delete('/role_management/roles/bulk-delete', { data: { roleIds } }),
   downloadRoleTemplate: () => {
     return api.get('/role_management/roles/template', {
       responseType: 'blob'

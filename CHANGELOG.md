@@ -1,6 +1,13 @@
 ## [Unreleased]
 
 ### 2025-07-25
+- Added multi-selection and bulk operations functionality for user and role management
+  - Implemented checkboxes for user and role selection with "select all" capability
+  - Added bulk delete functionality for users and roles with confirmation modals
+  - Added bulk role assignment functionality for users
+  - Added bulk status toggle (activate/deactivate) for users
+  - Implemented system role protection to prevent deletion of critical roles (Admin, System)
+  - Added appropriate UI feedback with toast notifications for all bulk operations
 - Added rows per page selector (10, 20, 50, 100 options) for all data grids in the application
 - Added column-based filtering and sorting capabilities to UserList and RoleList components
 - Added 20 new users (5 each for Director, Senior Manager, Manager, and Article roles)

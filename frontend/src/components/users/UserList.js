@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Pagination, Dropdown, Modal } from 'react-bootstrap';
+import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Modal, Alert, Dropdown, Pagination } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaSearch, FaEdit, FaTrash, FaUser, FaToggleOn, FaToggleOff, FaUserTag, FaFilter, FaSort } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaToggleOn, FaToggleOff, FaUserTag, FaUsersCog } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { userAPI, roleAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -31,6 +31,11 @@ const UserList = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [pageSize, setPageSize] = useState(10);
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [showBulkRoleModal, setShowBulkRoleModal] = useState(false);
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [selectAll, setSelectAll] = useState(false);
   
   const { hasPermission } = useAuth();
   const navigate = useNavigate();
@@ -40,6 +45,7 @@ const UserList = () => {
   const canDeleteUser = hasPermission(['user_delete']);
   const canBulkUpload = hasPermission(['user_create']);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUsers();
     fetchRoles();
@@ -56,6 +62,97 @@ const UserList = () => {
       }
     } catch (error) {
       console.error('Error fetching roles:', error);
+    }
+  };
+
+  // Handle selecting individual users
+  const handleSelectUser = (userId) => {
+    setSelectedUsers(prev => {
+      if (prev.includes(userId)) {
+        return prev.filter(id => id !== userId);
+      } else {
+        return [...prev, userId];
+      }
+    });
+    
+    // Update selectAll state if needed
+    if (selectAll && users.length > 0) {
+      setSelectAll(false);
+    }
+  };
+
+  // Handle select all users
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedUsers([]);
+    } else {
+      const allUserIds = users.map(user => user.user_id);
+      setSelectedUsers(allUserIds);
+    }
+    setSelectAll(!selectAll);
+  };
+
+  // Handle bulk delete action
+  const handleBulkDelete = async () => {
+    if (selectedUsers.length === 0) return;
+    
+    try {
+      setBulkActionLoading(true);
+      
+      // Make API call to delete multiple users
+      await userAPI.bulkDeleteUsers(selectedUsers);
+      
+      toast.success(`Successfully deleted ${selectedUsers.length} users`);
+      setShowBulkDeleteModal(false);
+      setSelectedUsers([]);
+      setSelectAll(false);
+      fetchUsers(); // Refresh the list
+    } catch (error) {
+      console.error('Error deleting users:', error);
+      toast.error('Failed to delete users. Please try again.');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Handle bulk role assignment
+  const handleBulkRoleAssignment = async (roleId) => {
+    if (selectedUsers.length === 0 || !roleId) return;
+    
+    try {
+      setBulkActionLoading(true);
+      
+      // Make API call to assign role to multiple users
+      await userAPI.bulkAssignRole(selectedUsers, roleId);
+      
+      toast.success(`Successfully assigned role to ${selectedUsers.length} users`);
+      setShowBulkRoleModal(false);
+      fetchUsers(); // Refresh the list
+    } catch (error) {
+      console.error('Error assigning roles:', error);
+      toast.error('Failed to assign roles. Please try again.');
+    } finally {
+      setBulkActionLoading(false);
+    }
+  };
+
+  // Handle bulk status toggle
+  const handleBulkStatusToggle = async (isActive) => {
+    if (selectedUsers.length === 0) return;
+    
+    try {
+      setBulkActionLoading(true);
+      
+      // Make API call to toggle status for multiple users
+      await userAPI.bulkToggleStatus(selectedUsers, isActive);
+      
+      toast.success(`Successfully ${isActive ? 'activated' : 'deactivated'} ${selectedUsers.length} users`);
+      fetchUsers(); // Refresh the list
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      toast.error('Failed to update user status. Please try again.');
+    } finally {
+      setBulkActionLoading(false);
     }
   };
 
@@ -79,6 +176,10 @@ const UserList = () => {
       
       // Apply any existing filters
       applyFilters(fetchedUsers);
+      
+      // Clear selections when fetching new users
+      setSelectedUsers([]);
+      setSelectAll(false);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to load users. Please try again.');
@@ -87,52 +188,6 @@ const UserList = () => {
     }
   };
 
-  const handleToggleStatus = async (userId, currentStatus) => {
-    try {
-      await userAPI.toggleUserStatus(userId, !currentStatus);
-      toast.success('User status updated successfully');
-      
-      // Update user in the local state
-      setUsers(users.map(user => 
-        user.user_id === userId 
-          ? { ...user, is_active: !currentStatus } 
-          : user
-      ));
-    } catch (error) {
-      console.error('Error toggling user status:', error);
-      toast.error('Failed to update user status');
-    }
-  };
-
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      try {
-        await userAPI.deleteUser(userId);
-        toast.success('User deleted successfully');
-        
-        // Remove user from local state
-        setUsers(users.filter(user => user.user_id !== userId));
-        setTotalUsers(totalUsers - 1);
-        setTotalPages(Math.ceil((totalUsers - 1) / pageSize));
-        
-        // If we deleted the last item on this page and there are other pages, go to previous page
-        if (users.length === 1 && currentPage > 1) {
-          setCurrentPage(currentPage - 1);
-        }
-      } catch (error) {
-        console.error('Error deleting user:', error);
-        toast.error('Failed to delete user');
-      }
-    }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setCurrentPage(1); // Reset to first page on new search
-    fetchUsers();
-  };
-  
-  // Apply client-side filters
   const applyFilters = (usersToFilter = allUsers) => {
     if (!usersToFilter || usersToFilter.length === 0) return;
     
@@ -219,16 +274,6 @@ const UserList = () => {
     setUsers(filteredResults);
   };
   
-  // Handle column header click for sorting
-  const handleSort = (key) => {
-    let direction = 'asc';
-    if (sortConfig.key === key && sortConfig.direction === 'asc') {
-      direction = 'desc';
-    }
-    setSortConfig({ key, direction });
-    applyFilters(); // Re-apply filters with the new sort configuration
-  };
-  
   // Handle filter change
   const handleFilterChange = (field, value) => {
     const newFilters = { ...filters, [field]: value };
@@ -237,9 +282,10 @@ const UserList = () => {
   };
   
   // Apply filters when filters state changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     applyFilters();
-  }, [filters, sortConfig]);
+  }, [searchTerm, filters, sortConfig]);
   
   // Clear all filters
   const clearFilters = () => {
@@ -264,14 +310,15 @@ const UserList = () => {
     setPageSize(Number(newSize));
     setCurrentPage(1); // Reset to first page when changing page size
   };
-
-  // Handle opening role edit modal
-  const handleShowRoleModal = (user) => {
-    setSelectedUser(user);
-    setShowRoleModal(true);
-  };
   
-  // Handle role update
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setCurrentPage(1); // Reset to first page when searching
+    fetchUsers();
+  };
+
+  // Handle role update for a single user
   const handleUpdateUserRoles = async (selectedRoleIds) => {
     if (!selectedUser) return;
     
@@ -313,29 +360,65 @@ const UserList = () => {
           <p className="text-muted">Manage system users and their access</p>
         </Col>
         <Col md={6} className="text-md-end">
-          {canCreateUser && (
-            <div className="d-flex gap-2 justify-content-end">
-              <Button 
-                variant="primary" 
-                as={Link} 
-                to="/users/create"
-                className="d-inline-flex align-items-center"
-              >
-                <FaPlus className="me-2" /> Add New User
-              </Button>
-              
-              {canBulkUpload && (
+          <div className="d-flex gap-2 justify-content-end">
+            {selectedUsers.length > 0 && (
+              <>
+                {canDeleteUser && (
+                  <Button 
+                    variant="danger" 
+                    onClick={() => setShowBulkDeleteModal(true)}
+                    className="d-inline-flex align-items-center"
+                    disabled={bulkActionLoading}
+                  >
+                    <FaTrash className="me-2" /> Delete Selected ({selectedUsers.length})
+                  </Button>
+                )}
+                
+                {canEditUser && (
+                  <Dropdown>
+                    <Dropdown.Toggle variant="secondary" id="dropdown-bulk-actions">
+                      <FaUsersCog className="me-2" /> Bulk Actions
+                    </Dropdown.Toggle>
+                    <Dropdown.Menu>
+                      <Dropdown.Item onClick={() => setShowBulkRoleModal(true)}>
+                        <FaUserTag className="me-2" /> Assign Role
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleBulkStatusToggle(true)}>
+                        <FaToggleOn className="me-2" /> Activate Users
+                      </Dropdown.Item>
+                      <Dropdown.Item onClick={() => handleBulkStatusToggle(false)}>
+                        <FaToggleOff className="me-2" /> Deactivate Users
+                      </Dropdown.Item>
+                    </Dropdown.Menu>
+                  </Dropdown>
+                )}
+              </>
+            )}
+            
+            {canCreateUser && (
+              <>
                 <Button 
-                  variant="outline-primary" 
+                  variant="primary" 
                   as={Link} 
-                  to="/users/bulk-upload"
+                  to="/users/create"
                   className="d-inline-flex align-items-center"
                 >
-                  <FaPlus className="me-2" /> Bulk Upload
+                  <FaPlus className="me-2" /> Add New User
                 </Button>
-              )}
-            </div>
-          )}
+                
+                {canBulkUpload && (
+                  <Button 
+                    variant="outline-primary" 
+                    as={Link} 
+                    to="/users/bulk-upload"
+                    className="d-inline-flex align-items-center"
+                  >
+                    <FaPlus className="me-2" /> Bulk Upload
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </Col>
       </Row>
       
@@ -343,7 +426,7 @@ const UserList = () => {
         <Card.Body>
           <Row className="mb-3">
             <Col md={6}>
-              <Form onSubmit={handleSearch}>
+              <Form onSubmit={(e) => { e.preventDefault(); fetchUsers(); }}>
                 <InputGroup>
                   <Form.Control 
                     placeholder="Search users..."
@@ -449,208 +532,114 @@ const UserList = () => {
               </div>
             </div>
           ) : (
-            <>
-              <div className="table-responsive">
-                <Table hover bordered className="align-middle">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th onClick={() => handleSort('name')} className="cursor-pointer">
-                        Name {sortConfig.key === 'name' && (
-                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
-                        )}
-                      </th>
-                      <th onClick={() => handleSort('email')} className="cursor-pointer">
-                        Email {sortConfig.key === 'email' && (
-                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
-                        )}
-                      </th>
-                      <th onClick={() => handleSort('mobile')} className="cursor-pointer">
-                        Mobile {sortConfig.key === 'mobile' && (
-                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
-                        )}
-                      </th>
-                      <th>Roles</th>
-                      <th onClick={() => handleSort('status')} className="cursor-pointer">
-                        Status {sortConfig.key === 'status' && (
-                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
-                        )}
-                      </th>
-                      <th onClick={() => handleSort('created')} className="cursor-pointer">
-                        Created Date {sortConfig.key === 'created' && (
-                          <FaSort className={`ms-1 ${sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'}`} />
-                        )}
-                      </th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.length > 0 ? (
-                      users.map((user, index) => (
-                        <tr key={user.user_id}>
-                          <td>{(currentPage - 1) * pageSize + index + 1}</td>
-                          <td>
-                            <Link to={`/users/${user.user_id}`} className="d-flex align-items-center text-decoration-none">
-                              <FaUser className="me-2 text-primary" />
-                              {user.first_name} {user.last_name}
-                            </Link>
-                          </td>
-                          <td>{user.email}</td>
-                          <td>{user.mobile_number || '-'}</td>
-                          <td>
-                            <div className="d-flex align-items-center">
-                              <div>
-                                {user.roles && user.roles.map(role => (
-                                  <Badge key={role.role_id} pill bg="primary" className="me-1">
-                                    {role.name}
-                                  </Badge>
-                                ))}
-                              </div>
-                              {canEditUser && (
-                                <Button 
-                                  variant="link" 
-                                  className="text-decoration-none p-0 ms-2"
-                                  onClick={() => handleShowRoleModal(user)}
-                                  title="Edit roles"
-                                >
-                                  <FaUserTag size={14} />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                          <td>
-                            <Badge bg={user.is_active ? 'success' : 'danger'}>
-                              {user.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </td>
-                          <td>{new Date(user.created_at).toLocaleDateString()}</td>
-                          <td>
-                            <div className="d-flex">
-                              <Button 
-                                variant="outline-info" 
-                                size="sm" 
-                                className="me-2" 
-                                onClick={() => navigate(`/users/edit/${user.user_id}`)} 
-                                title="Edit user"
-                              >
-                                <FaEdit />
-                              </Button>
-                              
-                              {canEditUser && (
-                                <>
-                                  <Button 
-                                    variant="outline-info" 
-                                    size="sm" 
-                                    className="me-2" 
-                                    onClick={() => navigate(`/users/edit/${user.user_id}`)} 
-                                    title="Edit user"
-                                  >
-                                    <FaEdit />
-                                  </Button>
-                                  
-                                  <Button 
-                                    variant={user.is_active ? 'outline-warning' : 'outline-success'} 
-                                    size="sm" 
-                                    className="me-2"
-                                    onClick={() => handleToggleStatus(user.user_id, user.is_active)}
-                                    title={user.is_active ? 'Deactivate user' : 'Activate user'}
-                                  >
-                                    {user.is_active ? <FaToggleOff /> : <FaToggleOn />}
-                                  </Button>
-                                </>
-                              )}
-                              
-                              {canDeleteUser && (
-                                <Button 
-                                  variant="outline-danger" 
-                                  size="sm" 
-                                  onClick={() => handleDeleteUser(user.user_id)}
-                                  title="Delete user"
-                                >
-                                  <FaTrash />
-                                </Button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan="7" className="text-center py-4">
-                          No users found.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </div>
-              
-              {users.length > 0 && (
-                <Row className="mt-4">
-                  <Col>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2">Showing {users.length} of {totalUsers} users</span>
-                        <Form.Group className="d-flex align-items-center">
-                          <Form.Label className="mb-0 me-2">Rows per page:</Form.Label>
-                          <Form.Select 
-                            size="sm" 
-                            value={pageSize}
-                            onChange={(e) => handlePageSizeChange(e.target.value)}
-                            style={{ width: '80px' }}
-                          >
-                            <option value="10">10</option>
-                            <option value="20">20</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                          </Form.Select>
-                        </Form.Group>
+            <Table striped hover responsive>
+              <thead>
+                <tr>
+                  <th className="text-center">ID</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                  <th>Email</th>
+                  <th>Mobile</th>
+                  <th>Status</th>
+                  <th className="text-center">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((user) => (
+                  <tr key={user.user_id}>
+                    <td className="text-center">{user.user_id}</td>
+                    <td>{user.first_name}</td>
+                    <td>{user.last_name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.mobile}</td>
+                    <td>
+                      <Badge bg={user.is_active ? 'success' : 'danger'}>
+                        {user.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                    </td>
+                    <td>
+                      <div className="d-flex">
+                        <Button 
+                          variant="outline-info" 
+                          size="sm" 
+                          className="me-2" 
+                          onClick={() => navigate(`/users/edit/${user.user_id}`)} 
+                          title="Edit user"
+                        >
+                          <FaEdit />
+                        </Button>
                       </div>
-                      <Pagination className="mb-0">
-                        <Pagination.First disabled={currentPage === 1} onClick={() => handlePageChange(1)} />
-                        <Pagination.Prev disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} />
-                        
-                        {[...Array(totalPages).keys()].map(page => {
-                          const pageNumber = page + 1;
-                          // Only show a few pages around current page for better UI
-                          if (
-                            pageNumber === 1 || 
-                            pageNumber === totalPages || 
-                            Math.abs(pageNumber - currentPage) <= 2
-                          ) {
-                            return (
-                              <Pagination.Item 
-                                key={pageNumber} 
-                                active={pageNumber === currentPage}
-                                onClick={() => handlePageChange(pageNumber)}
-                              >
-                                {pageNumber}
-                              </Pagination.Item>
-                            );
-                          } else if (
-                            pageNumber === 2 || 
-                            pageNumber === totalPages - 1
-                          ) {
-                            // Show ellipsis for better pagination UI
-                            return <Pagination.Ellipsis key={pageNumber} />;
-                          }
-                          return null;
-                        })}
-                        
-                        <Pagination.Next disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} />
-                        <Pagination.Last disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)} />
-                      </Pagination>
-                    </div>
-                  </Col>
-                </Row>
-              )}
-            </>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+          
+          {users.length > 0 && (
+            <Row className="mt-4">
+              <Col>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div className="d-flex align-items-center">
+                    <span className="me-2">Showing {users.length} of {totalUsers} users</span>
+                    <Form.Group className="d-flex align-items-center">
+                      <Form.Label className="mb-0 me-2">Rows per page:</Form.Label>
+                      <Form.Select 
+                        size="sm" 
+                        value={pageSize}
+                        onChange={(e) => handlePageSizeChange(e.target.value)}
+                        style={{ width: '80px' }}
+                      >
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100">100</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </div>
+                  <Pagination className="mb-0">
+                    <Pagination.First disabled={currentPage === 1} onClick={() => handlePageChange(1)} />
+                    <Pagination.Prev disabled={currentPage === 1} onClick={() => handlePageChange(currentPage - 1)} />
+                    
+                    {[...Array(totalPages).keys()].map(page => {
+                      const pageNumber = page + 1;
+                      // Only show a few pages around current page for better UI
+                      if (
+                        pageNumber === 1 || 
+                        pageNumber === totalPages || 
+                        Math.abs(pageNumber - currentPage) <= 2
+                      ) {
+                        return (
+                          <Pagination.Item 
+                            key={pageNumber} 
+                            active={pageNumber === currentPage}
+                            onClick={() => handlePageChange(pageNumber)}
+                          >
+                            {pageNumber}
+                          </Pagination.Item>
+                        );
+                      } else if (
+                        pageNumber === 2 || 
+                        pageNumber === totalPages - 1
+                      ) {
+                        // Show ellipsis for better pagination UI
+                        return <Pagination.Ellipsis key={pageNumber} />;
+                      }
+                      return null;
+                    })}
+                    
+                    <Pagination.Next disabled={currentPage === totalPages} onClick={() => handlePageChange(currentPage + 1)} />
+                    <Pagination.Last disabled={currentPage === totalPages} onClick={() => handlePageChange(totalPages)} />
+                  </Pagination>
+                </div>
+              </Col>
+            </Row>
           )}
         </Card.Body>
       </Card>
       
-      {/* Role Edit Modal */}
-      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)}>
+      {/* User Role Modal */}
+      <Modal show={showRoleModal} onHide={() => setShowRoleModal(false)} centered>
         <Modal.Header closeButton>
           <Modal.Title>Edit User Roles</Modal.Title>
         </Modal.Header>
@@ -716,6 +705,74 @@ const UserList = () => {
             disabled={savingRole}
           >
             {savingRole ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Bulk Delete Modal */}
+      <Modal show={showBulkDeleteModal} onHide={() => setShowBulkDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Multiple Users</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Are you sure you want to delete {selectedUsers.length} selected users? This action cannot be undone.</p>
+          
+          <Alert variant="danger">
+            <strong>Warning:</strong> Deleting users will remove all their associated data and access rights.
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowBulkDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="danger" 
+            onClick={handleBulkDelete}
+            disabled={bulkActionLoading}
+          >
+            {bulkActionLoading ? 'Deleting...' : `Delete ${selectedUsers.length} Users`}
+          </Button>
+        </Modal.Footer>
+      </Modal>
+      
+      {/* Bulk Role Assignment Modal */}
+      <Modal show={showBulkRoleModal} onHide={() => setShowBulkRoleModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Assign Role to Multiple Users</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <p>Select a role to assign to {selectedUsers.length} users:</p>
+          
+          <Form.Group className="mb-3">
+            <Form.Label>Select Role</Form.Label>
+            <Form.Select 
+              id="bulkRoleSelect"
+              aria-label="Select Role"
+              onChange={(e) => setSelectedUser({ ...selectedUser, roleId: e.target.value })}
+            >
+              <option value="">Select a role</option>
+              {roles.map(role => (
+                <option key={role.role_id} value={role.role_id}>
+                  {role.name}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+          
+          <Alert variant="info">
+            <strong>Note:</strong> This will add the selected role to all users, not replace existing roles.
+          </Alert>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowBulkRoleModal(false)}>
+            Cancel
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => handleBulkRoleAssignment(selectedUser?.roleId)}
+            disabled={bulkActionLoading || !selectedUser?.roleId}
+          >
+            {bulkActionLoading ? 'Assigning...' : 'Assign Role'}
           </Button>
         </Modal.Footer>
       </Modal>
