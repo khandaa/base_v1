@@ -1,6 +1,11 @@
 ## [Unreleased]
 
 ### 2025-07-25
+- Fixed admin role permissions to ensure complete access to all system features
+  - Added missing permissions for bulk upload user functionality
+  - Added missing permissions for feature toggle management
+  - Created migration script (007_fix_missing_admin_permissions.sql) to ensure admin role has all permissions
+  - Verified admin role now has complete access to all system functionality
 - Implemented route feature toggles for access control across application
   - Added feature toggle functionality for all application routes
   - Implemented role-based access with admin having full access

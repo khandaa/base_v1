@@ -261,6 +261,284 @@ router.put('/permissions/:id', [
 });
 
 /**
+ * @route GET /api/permission_management/missing-routes
+ * @description Get all routes that exist but don't have corresponding permissions
+ * @access Private - Requires permission_view permission
+ */
+router.get('/missing-routes', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const eventBus = req.app.locals.eventBus;
+    
+    // Get all existing permissions starting with 'route_'
+    const existingRoutePermissions = await dbMethods.all(db, 
+      'SELECT name FROM permissions_master WHERE name LIKE "route_%"',
+      []
+    );
+    
+    const existingRoutePermissionNames = new Set(existingRoutePermissions.map(p => p.name));
+    
+    // Define all expected route permissions based on current codebase analysis
+    const expectedRoutePermissions = [
+      // Feature toggles
+      { name: 'route_get_feature_toggles', description: 'Access to list all feature toggles', category: 'feature_toggles' },
+      { name: 'route_get_feature_toggles_name', description: 'Access to get specific feature toggle by name', category: 'feature_toggles' },
+      { name: 'route_patch_feature_toggles_update', description: 'Access to update feature toggle status', category: 'feature_toggles' },
+      
+      // File upload
+      { name: 'route_post_file_upload_upload', description: 'Access to upload files', category: 'file_upload' },
+      
+      // Payment QR codes
+      { name: 'route_get_payment_qr_codes', description: 'Access to list all QR codes', category: 'payment' },
+      { name: 'route_get_payment_qr_codes_id', description: 'Access to get specific QR code by ID', category: 'payment' },
+      { name: 'route_post_payment_qr_codes', description: 'Access to create new QR code', category: 'payment' },
+      { name: 'route_post_payment_qr_codes_id_activate', description: 'Access to activate QR code', category: 'payment' },
+      { name: 'route_delete_payment_qr_codes_id', description: 'Access to delete QR code', category: 'payment' },
+      { name: 'route_put_payment_qr_codes_id', description: 'Access to update QR code', category: 'payment' },
+      { name: 'route_patch_payment_qr_codes_id_deactivate', description: 'Access to deactivate QR code', category: 'payment' },
+      { name: 'route_get_payment_qr_codes_id_image', description: 'Access to get QR code image', category: 'payment' },
+      
+      // Payment transactions
+      { name: 'route_post_payment_transactions', description: 'Access to create payment transaction', category: 'payment' },
+      { name: 'route_get_payment_transactions', description: 'Access to list all transactions', category: 'payment' },
+      { name: 'route_get_payment_transactions_id', description: 'Access to get specific transaction', category: 'payment' },
+      { name: 'route_put_payment_transactions_id_verify', description: 'Access to verify transaction', category: 'payment' },
+      { name: 'route_get_payment_status', description: 'Access to check payment feature status', category: 'payment' },
+      
+      // Widget config
+      { name: 'route_get_widget_config', description: 'Access to get widget configuration', category: 'widget' },
+      { name: 'route_post_widget_config', description: 'Access to save widget configuration', category: 'widget' },
+      
+      // User management
+      { name: 'route_get_user_management_users', description: 'Access to list all users', category: 'user_management' },
+      { name: 'route_post_user_management_users', description: 'Access to create new user', category: 'user_management' },
+      { name: 'route_get_user_management_users_id', description: 'Access to get user by ID', category: 'user_management' },
+      { name: 'route_put_user_management_users_id', description: 'Access to update user', category: 'user_management' },
+      { name: 'route_patch_user_management_users_id_status', description: 'Access to toggle user status', category: 'user_management' },
+      { name: 'route_delete_user_management_users_id', description: 'Access to delete user', category: 'user_management' },
+      { name: 'route_get_user_management_users_template', description: 'Access to download user CSV template', category: 'user_management' },
+      { name: 'route_post_user_management_users_bulk', description: 'Access to bulk upload users', category: 'user_management' },
+      
+      // Role management
+      { name: 'route_get_role_management_roles', description: 'Access to list all roles', category: 'role_management' },
+      { name: 'route_get_role_management_roles_template', description: 'Access to download role template', category: 'role_management' },
+      { name: 'route_post_role_management_roles_bulk', description: 'Access to bulk upload roles', category: 'role_management' },
+      { name: 'route_get_role_management_roles_id', description: 'Access to get role by ID', category: 'role_management' },
+      { name: 'route_post_role_management_roles', description: 'Access to create new role', category: 'role_management' },
+      { name: 'route_put_role_management_roles_id', description: 'Access to update role', category: 'role_management' },
+      { name: 'route_delete_role_management_roles_id', description: 'Access to delete role', category: 'role_management' },
+      
+      // Authentication (may not need permissions for public routes)
+      { name: 'route_post_authentication_register', description: 'Access to user registration', category: 'authentication' },
+      { name: 'route_get_authentication_me', description: 'Access to current user data', category: 'authentication' },
+      
+      // Logging
+      { name: 'route_get_logging_activity', description: 'Access to view activity logs', category: 'logging' },
+      { name: 'route_get_logging_actions', description: 'Access to view log action types', category: 'logging' },
+      { name: 'route_get_logging_entities', description: 'Access to view log entity types', category: 'logging' },
+      { name: 'route_get_logging_stats', description: 'Access to view log statistics', category: 'logging' },
+      
+      // Permission management
+      { name: 'route_get_permission_management_permissions', description: 'Access to list all permissions', category: 'permission_management' },
+      { name: 'route_get_permission_management_permissions_id', description: 'Access to get specific permission', category: 'permission_management' },
+      { name: 'route_post_permission_management_permissions', description: 'Access to create new permission', category: 'permission_management' },
+      { name: 'route_put_permission_management_permissions_id', description: 'Access to update permission', category: 'permission_management' },
+      { name: 'route_post_permission_management_assign', description: 'Access to assign permissions to roles', category: 'permission_management' },
+      
+      // Database
+      { name: 'route_get_database_status', description: 'Access to database health status', category: 'database' },
+      { name: 'route_post_database_query', description: 'Access to run SQL queries (admin only)', category: 'database' }
+    ];
+    
+    // Find missing permissions
+    const missingPermissions = expectedRoutePermissions.filter(
+      expected => !existingRoutePermissionNames.has(expected.name)
+    );
+    
+    // Group by category for better organization
+    const missingByCategory = missingPermissions.reduce((acc, permission) => {
+      if (!acc[permission.category]) {
+        acc[permission.category] = [];
+      }
+      acc[permission.category].push(permission);
+      return acc;
+    }, {});
+    
+    // Log activity
+    eventBus.emit('log:activity', {
+      user_id: req.user.user_id,
+      action: 'MISSING_ROUTES_VIEW',
+      details: `Retrieved ${missingPermissions.length} missing route permissions`,
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+    
+    return res.status(200).json({
+      total_missing: missingPermissions.length,
+      total_expected: expectedRoutePermissions.length,
+      missing_permissions: missingPermissions,
+      missing_by_category: missingByCategory
+    });
+  } catch (error) {
+    console.error('Error fetching missing route permissions:', error);
+    return res.status(500).json({ error: 'Failed to retrieve missing route permissions' });
+  }
+});
+
+/**
+ * @route POST /api/permission_management/create-missing-routes
+ * @description Create missing route permissions in bulk
+ * @access Private - Requires permission_assign permission
+ */
+router.post('/create-missing-routes', [
+  authenticateToken, 
+  checkPermissions(['permission_assign']),
+  body('permissions').isArray().withMessage('Permissions must be an array'),
+  body('permissions.*.name').notEmpty().withMessage('Permission name is required'),
+  body('permissions.*.description').notEmpty().withMessage('Permission description is required')
+], async (req, res) => {
+  try {
+    // Validate request
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    
+    const { permissions } = req.body;
+    const db = req.app.locals.db;
+    const eventBus = req.app.locals.eventBus;
+    
+    const results = {
+      created: [],
+      skipped: [],
+      errors: []
+    };
+    
+    // Get Admin role for auto-assignment
+    const adminRole = await dbMethods.get(db, 'SELECT role_id FROM roles_master WHERE name = ?', ['Admin']);
+    
+    for (const permission of permissions) {
+      try {
+        const { name, description } = permission;
+        
+        // Check if permission already exists
+        const existing = await dbMethods.get(db, 
+          'SELECT permission_id FROM permissions_master WHERE name = ?', 
+          [name]
+        );
+        
+        if (existing) {
+          results.skipped.push({ name, reason: 'Already exists' });
+          continue;
+        }
+        
+        // Create permission
+        const result = await dbMethods.run(db, 
+          'INSERT INTO permissions_master (name, description) VALUES (?, ?)', 
+          [name, description]
+        );
+        
+        const newPermissionId = result.lastID;
+        
+        // Auto-assign to Admin role
+        if (adminRole) {
+          await dbMethods.run(db, 
+            'INSERT INTO role_permissions_tx (role_id, permission_id) VALUES (?, ?)',
+            [adminRole.role_id, newPermissionId]
+          );
+        }
+        
+        results.created.push({ 
+          name, 
+          permission_id: newPermissionId,
+          assigned_to_admin: !!adminRole 
+        });
+        
+      } catch (permError) {
+        console.error(`Error creating permission ${permission.name}:`, permError);
+        results.errors.push({ 
+          name: permission.name, 
+          error: permError.message 
+        });
+      }
+    }
+    
+    // Log activity
+    eventBus.emit('log:activity', {
+      user_id: req.user.user_id,
+      action: 'MISSING_ROUTES_CREATED',
+      details: `Created ${results.created.length} missing route permissions`,
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+    
+    return res.status(200).json({
+      message: `Processed ${permissions.length} permissions`,
+      results
+    });
+  } catch (error) {
+    console.error('Error creating missing route permissions:', error);
+    return res.status(500).json({ error: 'Failed to create missing route permissions' });
+  }
+});
+
+/**
+ * @route GET /api/permission_management/roles-permissions
+ * @description Get all roles with their assigned permissions
+ * @access Private - Requires permission_view permission
+ */
+router.get('/roles-permissions', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
+  try {
+    const db = req.app.locals.db;
+    const eventBus = req.app.locals.eventBus;
+    
+    // Get all roles
+    const roles = await dbMethods.all(db, 
+      'SELECT role_id, name, description, created_at FROM roles_master ORDER BY name',
+      []
+    );
+    
+    // For each role, get their permissions
+    for (const role of roles) {
+      const permissions = await dbMethods.all(db, 
+        `SELECT p.permission_id, p.name, p.description
+         FROM permissions_master p
+         JOIN role_permissions_tx rp ON p.permission_id = rp.permission_id
+         WHERE rp.role_id = ?
+         ORDER BY p.name`,
+        [role.role_id]
+      );
+      
+      role.permissions = permissions;
+      role.permission_count = permissions.length;
+    }
+    
+    // Get total permission count for reference
+    const totalPermissions = await dbMethods.get(db, 
+      'SELECT COUNT(*) as count FROM permissions_master',
+      []
+    );
+    
+    // Log activity
+    eventBus.emit('log:activity', {
+      user_id: req.user.user_id,
+      action: 'ROLES_PERMISSIONS_VIEW',
+      details: 'Retrieved roles with their permissions',
+      ip_address: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+    
+    return res.status(200).json({
+      roles,
+      total_permissions: totalPermissions.count
+    });
+  } catch (error) {
+    console.error('Error fetching roles with permissions:', error);
+    return res.status(500).json({ error: 'Failed to retrieve roles with permissions' });
+  }
+});
+
+/**
  * @route POST /api/permission_management/assign
  * @description Assign or remove permissions from a role
  * @access Private - Requires permission_assign permission

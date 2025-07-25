@@ -154,6 +154,9 @@ export const permissionAPI = {
   createPermission: (permissionData) => api.post('/permission_management/permissions', permissionData),
   updatePermission: (id, permissionData) => api.put(`/permission_management/permissions/${id}`, permissionData),
   assignPermissions: (roleId, permissions) => api.post('/permission_management/assign', { role_id: roleId, permissions }),
+  getMissingRoutes: () => api.get('/permission_management/missing-routes'),
+  createMissingRoutes: (permissions) => api.post('/permission_management/create-missing-routes', { permissions }),
+  getRolesWithPermissions: () => api.get('/permission_management/roles-permissions'),
 };
 
 // Logging API
