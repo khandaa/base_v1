@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Modal, Alert, Dropdown, Pagination } from 'react-bootstrap';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Dropdown, Modal, Alert, Spinner, Pagination } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaToggleOn, FaToggleOff, FaUserTag, FaUsersCog } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaSearch, FaFilter, FaToggleOn, FaToggleOff, FaUserTag, FaUsersCog, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { userAPI, roleAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -136,6 +136,33 @@ const UserList = () => {
     }
   };
 
+  // Handle individual user status toggle
+  const handleToggleUserStatus = async (userId, currentStatus) => {
+    try {
+      const newStatus = !currentStatus;
+      
+      // Update UI optimistically for better UX
+      setUsers(users.map(user => {
+        if (user.user_id === userId) {
+          return { ...user, is_active: newStatus };
+        }
+        return user;
+      }));
+      
+      // Make API call to toggle status
+      await userAPI.toggleUserStatus(userId, newStatus);
+      
+      // Show success notification
+      toast.success(`User status ${newStatus ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error('Error toggling user status:', error);
+      toast.error('Failed to update user status. Please try again.');
+      
+      // Revert UI on error
+      fetchUsers();
+    }
+  };
+  
   // Handle bulk status toggle
   const handleBulkStatusToggle = async (isActive) => {
     if (selectedUsers.length === 0) return;
@@ -236,6 +263,18 @@ const UserList = () => {
         let aValue, bValue;
         
         switch (sortConfig.key) {
+          case 'id':
+            aValue = a.user_id;
+            bValue = b.user_id;
+            break;
+          case 'firstName':
+            aValue = a.first_name || '';
+            bValue = b.first_name || '';
+            break;
+          case 'lastName':
+            aValue = a.last_name || '';
+            bValue = b.last_name || '';
+            break;
           case 'name':
             aValue = `${a.first_name} ${a.last_name}`;
             bValue = `${b.first_name} ${b.last_name}`;
@@ -247,6 +286,11 @@ const UserList = () => {
           case 'mobile':
             aValue = a.mobile_number || '';
             bValue = b.mobile_number || '';
+            break;
+          case 'role':
+            // Sort by the first role name, or empty string if no roles
+            aValue = a.roles && a.roles.length > 0 ? a.roles[0].name : '';
+            bValue = b.roles && b.roles.length > 0 ? b.roles[0].name : '';
             break;
           case 'status':
             aValue = a.is_active;
@@ -306,11 +350,31 @@ const UserList = () => {
   };
   
   // Handle page size change
-  const handlePageSizeChange = (newSize) => {
-    setPageSize(Number(newSize));
+  const handlePageSizeChange = (size) => {
+    setPageSize(Number(size));
     setCurrentPage(1); // Reset to first page when changing page size
   };
   
+  // Handle column sorting
+  const handleSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  // Render sort icon based on current sort configuration
+  const renderSortIcon = (column) => {
+    if (sortConfig.key !== column) {
+      return <FaSort className="ms-2" size={12} />;
+    }
+    
+    return sortConfig.direction === 'asc' ? 
+      <FaSortUp className="ms-2" size={12} /> : 
+      <FaSortDown className="ms-2" size={12} />;
+  };
+
   // Handle search form submission
   const handleSearch = (e) => {
     e.preventDefault();
@@ -535,12 +599,27 @@ const UserList = () => {
             <Table striped hover responsive>
               <thead>
                 <tr>
-                  <th className="text-center">ID</th>
-                  <th>First Name</th>
-                  <th>Last Name</th>
-                  <th>Email</th>
-                  <th>Mobile</th>
-                  <th>Status</th>
+                  <th className="text-center" onClick={() => handleSort('id')} style={{ cursor: 'pointer' }}>
+                    ID {renderSortIcon('id')}
+                  </th>
+                  <th onClick={() => handleSort('firstName')} style={{ cursor: 'pointer' }}>
+                    First Name {renderSortIcon('firstName')}
+                  </th>
+                  <th onClick={() => handleSort('lastName')} style={{ cursor: 'pointer' }}>
+                    Last Name {renderSortIcon('lastName')}
+                  </th>
+                  <th onClick={() => handleSort('email')} style={{ cursor: 'pointer' }}>
+                    Email {renderSortIcon('email')}
+                  </th>
+                  <th onClick={() => handleSort('mobile')} style={{ cursor: 'pointer' }}>
+                    Mobile {renderSortIcon('mobile')}
+                  </th>
+                  <th onClick={() => handleSort('role')} style={{ cursor: 'pointer' }}>
+                    Role {renderSortIcon('role')}
+                  </th>
+                  <th onClick={() => handleSort('status')} style={{ cursor: 'pointer' }}>
+                    Status {renderSortIcon('status')}
+                  </th>
                   <th className="text-center">Actions</th>
                 </tr>
               </thead>
@@ -551,11 +630,56 @@ const UserList = () => {
                     <td>{user.first_name}</td>
                     <td>{user.last_name}</td>
                     <td>{user.email}</td>
-                    <td>{user.mobile}</td>
+                    <td>{user.mobile_number || 'N/A'}</td>
                     <td>
-                      <Badge bg={user.is_active ? 'success' : 'danger'}>
-                        {user.is_active ? 'Active' : 'Inactive'}
-                      </Badge>
+                      {canEditUser ? (
+                        <Dropdown>
+                          <Dropdown.Toggle variant="outline-secondary" size="sm" id={`role-dropdown-${user.user_id}`}>
+                            {user.roles && user.roles.length > 0 ? user.roles.map(role => role.name).join(', ') : 'No Role'}
+                          </Dropdown.Toggle>
+                          <Dropdown.Menu>
+                            {roles.map(role => (
+                              <Dropdown.Item 
+                                key={role.role_id}
+                                onClick={() => {
+                                  // Set the selected user and pre-select their current roles
+                                  setSelectedUser({
+                                    ...user,
+                                    roles: user.roles || []
+                                  });
+                                  setShowRoleModal(true);
+                                }}
+                              >
+                                {role.name}
+                              </Dropdown.Item>
+                            ))}
+                          </Dropdown.Menu>
+                        </Dropdown>
+                      ) : (
+                        <span>
+                          {user.roles && user.roles.length > 0 ? user.roles.map(role => role.name).join(', ') : 'No Role'}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      {canEditUser ? (
+                        <Button 
+                          variant={user.is_active ? 'success' : 'danger'}
+                          size="sm"
+                          className="d-inline-flex align-items-center"
+                          onClick={() => handleToggleUserStatus(user.user_id, user.is_active)}
+                          disabled={user.email === 'admin@example.com'} // Protect admin account
+                        >
+                          {user.is_active ? 
+                            <><FaToggleOn className="me-1" /> Active</> : 
+                            <><FaToggleOff className="me-1" /> Inactive</>
+                          }
+                        </Button>
+                      ) : (
+                        <Badge bg={user.is_active ? 'success' : 'danger'}>
+                          {user.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      )}
                     </td>
                     <td>
                       <div className="d-flex">
@@ -568,6 +692,24 @@ const UserList = () => {
                         >
                           <FaEdit />
                         </Button>
+                        {canEditUser && (
+                          <Button 
+                            variant="outline-primary" 
+                            size="sm" 
+                            className="me-2" 
+                            onClick={() => {
+                              // Set the selected user and pre-select their current roles
+                              setSelectedUser({
+                                ...user,
+                                roles: user.roles || []
+                              });
+                              setShowRoleModal(true);
+                            }}
+                            title="Change role"
+                          >
+                            <FaUserTag />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>

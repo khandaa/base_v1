@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import styles from './RoleList.module.css';
 import { Container, Row, Col, Card, Table, Button, Form, InputGroup, Badge, Modal, Alert } from 'react-bootstrap';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaPlus, FaEdit, FaTrash, FaShieldAlt, FaSearch, FaFilter, FaEllipsisV, FaKey, FaSort } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaShieldAlt, FaSearch, FaFilter, FaEllipsisV, FaKey, FaSort, FaSortUp, FaSortDown } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { roleAPI, permissionAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
@@ -165,6 +165,10 @@ const RoleList = () => {
               aValue = a.permissions ? a.permissions.length : 0;
               bValue = b.permissions ? b.permissions.length : 0;
               break;
+            case 'created_at':
+              aValue = new Date(a.created_at || 0);
+              bValue = new Date(b.created_at || 0);
+              break;
             default:
               aValue = a[sortConfig.key];
               bValue = b[sortConfig.key];
@@ -226,6 +230,17 @@ const RoleList = () => {
       direction = 'desc';
     }
     setSortConfig({ key, direction });
+  };
+  
+  // Render sort icon based on current sort configuration
+  const renderSortIcon = (column) => {
+    if (sortConfig.key !== column) {
+      return <FaSort className="ms-2" size={12} />;
+    }
+    
+    return sortConfig.direction === 'asc' ? 
+      <FaSortUp className="ms-2" size={12} /> : 
+      <FaSortDown className="ms-2" size={12} />;
   };
   
   // Handle filter change
@@ -540,16 +555,17 @@ const RoleList = () => {
                       />
                     </th>
                     <th onClick={() => handleSort('name')} style={{cursor: 'pointer'}}>
-                      Role Name {sortConfig.key === 'name' && (
-                        <FaSort className={sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'} />
-                      )}
+                      Role Name {renderSortIcon('name')}
                     </th>
                     <th onClick={() => handleSort('description')} style={{cursor: 'pointer'}}>
-                      Description {sortConfig.key === 'description' && (
-                        <FaSort className={sortConfig.direction === 'asc' ? 'text-primary' : 'text-danger'} />
-                      )}
+                      Description {renderSortIcon('description')}
                     </th>
-                    <th>Permissions</th>
+                    <th onClick={() => handleSort('permissions')} style={{cursor: 'pointer'}}>
+                      Permissions {renderSortIcon('permissions')}
+                    </th>
+                    <th onClick={() => handleSort('created_at')} style={{cursor: 'pointer'}}>
+                      Created {renderSortIcon('created_at')}
+                    </th>
                     <th>Actions</th>
                   </tr>
                 </thead>

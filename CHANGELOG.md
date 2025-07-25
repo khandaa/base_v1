@@ -1,6 +1,16 @@
 ## [Unreleased]
 
 ### 2025-07-25
+- Added interactive status toggle in user management table
+  - Converted static status badges to interactive toggle buttons
+  - Added ability to instantly activate/deactivate users with a single click
+  - Protected system admin account from accidental deactivation
+  - Implemented optimistic UI updates with error handling
+- Enhanced table sorting functionality across all columns in user and role management
+  - Added clickable column headers with sort indicators (ascending/descending)
+  - Implemented sorting for all data columns including ID, name, email, mobile, role, and status
+  - Added consistent visual indicators showing current sort direction
+- Added role column and inline role editing functionality in user management table
 - Added mobile number field as optional in user bulk upload CSV template
 - Added multi-selection and bulk operations functionality for user and role management
   - Implemented checkboxes for user and role selection with "select all" capability

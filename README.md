@@ -43,11 +43,27 @@ base_v1/
 ```
 
 ## Features
+- **Enhanced User Management Interface**:
+  - Interactive status toggle buttons for instant user activation/deactivation
+  - Visual status indicators with toggle buttons for authorized users
+  - Protection for system accounts from accidental deactivation
+
+- **Enhanced Table Sorting and Management**:
+  - Sort any column in user and role tables with intuitive click-to-sort functionality
+  - Clear visual indicators showing current sort direction (ascending/descending)
+  - Consistent sorting behavior across all data grids
+
+- **Role Management in User Table**: View and manage user roles directly from the user list:
+  - Display user roles in a dedicated column for easy identification
+  - Change user roles directly from the user table with inline role editing
+  - Quick access to role management via dedicated role change button
+
 - **Multi-Selection and Bulk Operations**: Efficiently manage users and roles with powerful bulk operations:
   - Select multiple users or roles with checkbox selection and "select all" capability
   - Perform bulk deletion of users and roles with confirmation dialogs
   - Assign roles to multiple users simultaneously
   - Toggle status (activate/deactivate) for multiple users at once
+  - Support for optional mobile number in bulk user uploads
   - System protection prevents deletion of critical system roles (Admin, System)
   - Clear UI feedback with toast notifications for all operations
 
