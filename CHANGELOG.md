@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+### 2025-07-25
+- Fixed role creation and edit functionality by correcting API payload field from 'permission_ids' to 'permissions'
+- Enhanced dashboard UI to display components based on user's role and permissions
+- Added permission-based filtering for dashboard cards (Users, Roles, Permissions, Activities)
+- Added permission-based access control for activity charts and logs section
+- Updated dashboard to display a simple "No permissions" card for users without any permissions
+- Fixed permission checking logic to avoid infinite loops and redundant API calls
+- Removed user_view permission from User role to ensure proper separation of access levels
+- Added permission check for file upload widget visibility
+
 ### 2025-07-15
 - Fixed QR code fetching error (500 Internal Server Error) by adding database table initialization for payment_qr_codes and payment_transactions tables
 - Fixed QR code upload error (500 Internal Server Error) by correcting the path mismatch between multer storage destination and Express static file serving

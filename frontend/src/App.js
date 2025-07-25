@@ -48,8 +48,6 @@ import FileUploadConfig from './components/fileupload/FileUploadConfig';
 // Common Components
 import Unauthorized from './components/common/Unauthorized';
 
-// Attendance Components
-import AttendancePage from './pages/AttendancePage';
 
 function App() {
   const { isAuthenticated, isLoading, currentUser, hasRole } = useAuth();
@@ -97,12 +95,6 @@ function App() {
             </ProtectedRoute>
           } />
           
-          {/* Attendance Routes */}
-          <Route path="attendance/*" element={
-            <ProtectedRoute>
-              <AttendancePage />
-            </ProtectedRoute>
-          } />
           <Route index element={<Navigate to="/dashboard" />} />
           <Route path="dashboard" element={<Dashboard />} />
           

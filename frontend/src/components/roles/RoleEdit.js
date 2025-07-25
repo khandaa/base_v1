@@ -78,7 +78,7 @@ const RoleEdit = () => {
       const roleData = {
         name: values.name,
         description: values.description,
-        permission_ids: values.permissionIds
+        permissions: values.permissionIds
       };
 
       await roleAPI.updateRole(id, roleData);

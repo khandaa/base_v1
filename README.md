@@ -68,6 +68,11 @@ base_v1/
   - Feature toggle for enabling/disabling payment features
 - System activity logging and monitoring
 - Permission-based UI components
+- Role-based dashboard with adaptive cards based on user permissions
+  - Dashboard components displayed dynamically based on user's permissions
+  - Users without any permissions see a clean "No permissions" message
+  - API calls prevented for unauthorized components for improved performance
+  - Clear visual indicators for available functionality
 
 ## Technology Stack
 

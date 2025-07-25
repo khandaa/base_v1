@@ -173,8 +173,11 @@ INSERT INTO permissions_master (name, description) VALUES
     ('role_edit', 'Can edit roles'),
     ('role_delete', 'Can delete roles'),
     ('permission_view', 'Can view permissions'),
+    ('permission_create', 'Can view permissions'),
+    ('permission_edit', 'Can view permissions'),
+    ('permission_delete', 'Can view permissions'),
    ('feature_toggle_view', 'View feature toggles'),
-   ('feature_toggle_edit', 'Create, edit, or delete feature toggles')
+   ('feature_toggle_manage', 'Create, edit, or delete feature toggles')
     ('permission_assign', 'Can assign permissions to roles');
 
 -- Assign all permissions to Admin role
