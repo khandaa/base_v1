@@ -39,7 +39,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Database initialization
-const dbPath = path.join(__dirname, '..', 'db', 'employdex-base.db');
+const dbPath = path.join(__dirname, '..', 'db', process.env.DB_NAME || 'employdex-base.db');
 const dbExists = fs.existsSync(dbPath);
 
 // Create db directory if it doesn't exist
@@ -57,7 +57,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     
     // If database doesn't exist, initialize it with schema
     if (!dbExists) {
-      const sqlScript = fs.readFileSync(path.join(__dirname, '..', 'db', 'base_v1_db_script.sql'), 'utf8');
+      const sqlScript = fs.readFileSync(path.join(__dirname, '..', 'data_update_scripts','migrations', 'base_v1_db_script.sql'), 'utf8');
       
       // Split the script by semicolons to execute each statement separately
       const sqlStatements = sqlScript.split(';').filter(stmt => stmt.trim() !== '');
