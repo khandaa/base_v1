@@ -598,10 +598,10 @@ router.delete('/users/:id', authenticateToken, checkPermissions(['user_delete'])
 router.get('/users/template', authenticateToken, checkPermissions(['user_create']), async (req, res) => {
   try {
     // CSV header row
-    const header = 'firstName,lastName,email,password,roles,isActive\n';
+    const header = 'firstName,lastName,email,password,roles,isActive,mobileNumber\n';
     
     // Example row
-    const exampleRow = 'John,Doe,john.doe@example.com,StrongP@ss1,User,true\n';
+    const exampleRow = 'John,Doe,john.doe@example.com,StrongP@ss1,User,true,9876543210\n';
     
     // Set response headers
     res.setHeader('Content-Type', 'text/csv');
@@ -750,7 +750,7 @@ async function processUserRow(row, db, results, eventBus, createdBy) {
     const result = await dbMethods.run(db, 
       `INSERT INTO users_master (first_name, last_name, email, mobile_number, password_hash, is_active) 
        VALUES (?, ?, ?, ?, ?, ?)`, 
-      [row.firstName, row.lastName, row.email, row.email, hashedPassword, isActive ? 1 : 0]
+      [row.firstName, row.lastName, row.email, row.mobileNumber || null, hashedPassword, isActive ? 1 : 0]
     );
     
     const newUserId = result.lastID;

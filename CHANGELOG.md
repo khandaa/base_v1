@@ -1,6 +1,7 @@
 ## [Unreleased]
 
 ### 2025-07-25
+- Added mobile number field as optional in user bulk upload CSV template
 - Added multi-selection and bulk operations functionality for user and role management
   - Implemented checkboxes for user and role selection with "select all" capability
   - Added bulk delete functionality for users and roles with confirmation modals
