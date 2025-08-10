@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../../middleware/auth');
-const { checkPermissions } = require('../../middleware/rbac');
+const { requirePermission } = require('../../middleware/access');
 const { dbMethods } = require('../../modules/database/backend');
 
 /**
@@ -17,22 +17,7 @@ const { dbMethods } = require('../../modules/database/backend');
  */
 router.get('/', [
   authenticateToken,
-  (req, res, next) => {
-    // Allow access if user has feature_toggle_view permission OR is Admin
-    const userRoles = req.user.roles || [];
-    const userPermissions = req.user.permissions || [];
-    
-    if (userPermissions.includes('feature_toggle_view') ||
-        userRoles.includes('Admin') ||
-        userRoles.includes('admin')) {
-      next();
-    } else {
-      return res.status(403).json({ 
-        error: 'Access denied: insufficient permissions',
-        required: ['feature_toggle_view']
-      });
-    }
-  }
+  requirePermission({ anyOfPermissions: ['feature_toggle_view'], anyOfRoles: ['Admin', 'admin'] })
 ], async (req, res) => {
   try {
     const db = req.app.locals.db;
@@ -66,22 +51,7 @@ router.get('/', [
  */
 router.get('/:name', [
   authenticateToken,
-  (req, res, next) => {
-    // Allow access if user has feature_toggle_view permission OR is Admin
-    const userRoles = req.user.roles || [];
-    const userPermissions = req.user.permissions || [];
-    
-    if (userPermissions.includes('feature_toggle_view') ||
-        userRoles.includes('Admin') ||
-        userRoles.includes('admin')) {
-      next();
-    } else {
-      return res.status(403).json({ 
-        error: 'Access denied: insufficient permissions',
-        required: ['feature_toggle_view']
-      });
-    }
-  }
+  requirePermission({ anyOfPermissions: ['feature_toggle_view'], anyOfRoles: ['Admin', 'admin'] })
 ], async (req, res) => {
   try {
     const toggleName = req.params.name;
@@ -110,22 +80,7 @@ router.get('/:name', [
  */
 router.patch('/update', [
   authenticateToken,
-  (req, res, next) => {
-    // Allow access if user has feature_toggle_edit permission OR is Admin
-    const userRoles = req.user.roles || [];
-    const userPermissions = req.user.permissions || [];
-    
-    if (userPermissions.includes('feature_toggle_edit') ||
-        userRoles.includes('Admin') ||
-        userRoles.includes('admin')) {
-      next();
-    } else {
-      return res.status(403).json({ 
-        error: 'Access denied: insufficient permissions',
-        required: ['feature_toggle_edit']
-      });
-    }
-  },
+  requirePermission({ anyOfPermissions: ['feature_toggle_edit'], anyOfRoles: ['Admin', 'admin'] }),
   body('name').notEmpty().withMessage('Feature toggle name is required'),
   body('is_enabled').isBoolean().withMessage('is_enabled must be a boolean')
 ], async (req, res) => {

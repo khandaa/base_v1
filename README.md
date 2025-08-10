@@ -43,6 +43,13 @@ base_v1/
 ```
 
 ## Features
+
+- Unified access layer (permissions + features)
+  - Backend middleware `requirePermission()` and `requireFeature()` in `middleware/access.js`
+  - Frontend guard hook `useGate()` in `frontend/src/hooks/useGate.js`
+  - `<Guard />` component in `frontend/src/components/common/Guard.js`
+  - Feature toggles default to disabled if undefined; frontend normalized to read `is_enabled`
+
 - **Route Feature Toggles**:
   - Comprehensive feature toggle system for all application routes
   - Role-based access control with permission checks
@@ -77,13 +84,11 @@ base_v1/
 
 - **Payment Integration Module**: A comprehensive payment integration system with QR code management and transaction tracking. Admins can upload, activate, and manage payment QR codes through an intuitive UI. The module automatically creates required database tables on initialization.
 
-- **Feature Toggle System**: Comprehensive feature management with role-based access control:
-  - **Route-Based Feature Toggles**: All application routes are protected by feature toggles that can be enabled/disabled
-  - **Role-Based Access Control**: Admin users have full access to all routes and features
-  - **Permission Structure**: Non-admin users have view permissions only for enabled routes
-  - **Admin UI**: Admin and Full Access roles can manage feature flags via a dedicated UI
-  - **API Integration**: Complete API for managing feature toggles programmatically
-  - **Controlled Rollout**: Enable/disable features and routes for controlled deployment
+- **Feature Toggle System (simplified)**:
+  - Backend: `requireFeature('feature_name')` middleware enforces toggles on APIs
+  - Frontend: `FeatureToggleContext` uses `is_enabled` and defaults missing flags to disabled
+  - Unified guard: `<Guard feature="payment" />` or `useGate({ feature: 'payment' })`
+  - Admin/role allowances should be expressed via `requirePermission({ anyOfRoles: ['Admin'] })` instead of inline checks
 
 - **Activity Logging**: Activity Log page displays timestamps in a readable format and includes a 'IP Address / Port' column, showing the source of each activity if available.
 
@@ -122,6 +127,8 @@ base_v1/
 - **Authentication**: JWT
 
 ## Getting Started
+
+Default admin credentials: admin / Admin@123
 
 ### Local Development Proxy
 

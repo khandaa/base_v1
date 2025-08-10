@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### 2025-08-10
+- Simplified access control across backend and frontend
+  - Added unified middleware `requirePermission()` and `requireFeature()` in `middleware/access.js`
+  - Refactored `backend/routes/feature-toggles.js` to use `requirePermission` (removed inline admin/permission checks)
+  - Normalized frontend `FeatureToggleContext` to use `is_enabled` and default missing features to disabled
+  - Added `useGate()` hook for unified UI gating at `frontend/src/hooks/useGate.js`
+  - Added `<Guard />` component at `frontend/src/components/common/Guard.js` for simple JSX protection
+  - Updated README with new access layer usage and defaults
+
 ### 2025-07-25
 - Fixed admin role permissions to ensure complete access to all system features
   - Added missing permissions for bulk upload user functionality

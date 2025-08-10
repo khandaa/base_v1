@@ -12,50 +12,48 @@ export const useFeatureToggle = () => useContext(FeatureToggleContext);
 export const FeatureToggleProvider = ({ children }) => {
   const [featureToggles, setFeatureToggles] = useState({});
   const [loading, setLoading] = useState(true);
-  const { authToken, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   // Fetch all feature toggles from the API
   useEffect(() => {
     const fetchFeatureToggles = async () => {
-      if (!isAuthenticated || !authToken) {
+      if (!isAuthenticated) {
         setLoading(false);
         return;
       }
 
       try {
-        const response = await axios.get('/api/feature-toggles', {
-          headers: { Authorization: `Bearer ${authToken}` }
-        });
+        const response = await axios.get('/api/feature-toggles');
 
         // Convert array to a map for easier access
         const togglesMap = {};
         if (response.data && Array.isArray(response.data)) {
           response.data.forEach(toggle => {
-            togglesMap[toggle.feature_name] = toggle.enabled === 1;
+            // Backend returns is_enabled as 0/1 (SQLite). Normalize to boolean.
+            togglesMap[toggle.feature_name] = !!toggle.is_enabled;
           });
         }
 
         setFeatureToggles(togglesMap);
         setLoading(false);
       } catch (error) {
-        console.warn('Feature toggles API not available, defaulting to enabled:', error.message);
-        // Don't prevent app from working if feature toggles API fails
+        console.warn('Feature toggles API not available, defaulting to disabled:', error.message);
+        // Default to empty map (features disabled by default if not found)
         setFeatureToggles({});
         setLoading(false);
       }
     };
 
     fetchFeatureToggles();
-  }, [authToken, isAuthenticated]);
+  }, [isAuthenticated]);
 
   // Check if a feature is enabled
   const isFeatureEnabled = (featureName) => {
-    // Admin users always have access to all features
     if (featureToggles[featureName] !== undefined) {
       return featureToggles[featureName];
     }
-    // Default to true for features not defined in the database
-    return true;
+    // Default to false for features not defined in the database (safer default)
+    return false;
   };
 
   // The context value that will be provided
