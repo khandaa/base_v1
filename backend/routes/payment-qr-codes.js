@@ -4,7 +4,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 //const { authenticateToken, checkPermission } = require('../../modules/authentication/backend/middleware');
-const { authenticateToken, checkPermission } = require('../../middleware/auth');
+const { authenticateToken } = require('../../middleware/auth');
+const { requirePermission, requireFeature } = require('../middleware/access');
 // Set up storage for QR code images
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -52,7 +53,7 @@ const upload = multer({
  * @desc    Get all QR codes
  * @access  Private (requires authentication and payment_view permission)
  */
-router.get('/', authenticateToken, checkPermission('payment_view'), (req, res) => {
+router.get('/', authenticateToken, requirePermission({ anyOfPermissions: ['payment_view'], anyOfRoles: ['Admin'] }), requireFeature('payment_integration'), (req, res) => {
   try {
     const db = req.app.locals.db;
     const sql = `
@@ -90,7 +91,7 @@ router.get('/', authenticateToken, checkPermission('payment_view'), (req, res) =
  * @desc    Get a specific QR code by ID
  * @access  Private (requires authentication and payment_view permission)
  */
-router.get('/:id', authenticateToken, checkPermission('payment_view'), (req, res) => {
+router.get('/:id', authenticateToken, requirePermission({ anyOfPermissions: ['payment_view'], anyOfRoles: ['Admin'] }), requireFeature('payment_integration'), (req, res) => {
   try {
     const db = req.app.locals.db;
     const { id } = req.params;
@@ -148,7 +149,7 @@ const handleMulterError = (err, req, res, next) => {
  * @desc    Upload a new QR code
  * @access  Private (requires authentication and payment_edit permission)
  */
-router.post('/', authenticateToken, checkPermission('payment_edit'), upload.single('qr_code_image'), handleMulterError, (req, res) => {
+router.post('/', authenticateToken, requirePermission({ anyOfPermissions: ['payment_edit'], anyOfRoles: ['Admin'] }), requireFeature('payment_integration'), upload.single('qr_code_image'), handleMulterError, (req, res) => {
   try {
     const db = req.app.locals.db;
     const { payment_name, payment_description, payment_type } = req.body;
@@ -210,7 +211,7 @@ router.post('/', authenticateToken, checkPermission('payment_edit'), upload.sing
  * @desc    Activate a QR code (and deactivate all others)
  * @access  Private (requires authentication and payment_edit permission)
  */
-router.post('/:id/activate', authenticateToken, checkPermission('payment_edit'), (req, res) => {
+router.post('/:id/activate', authenticateToken, requirePermission({ anyOfPermissions: ['payment_edit'], anyOfRoles: ['Admin'] }), requireFeature('payment_integration'), (req, res) => {
   try {
     const db = req.app.locals.db;
     const { id } = req.params;
@@ -269,7 +270,7 @@ router.post('/:id/activate', authenticateToken, checkPermission('payment_edit'),
  * @desc    Delete a QR code
  * @access  Private (requires authentication and payment_edit permission)
  */
-router.delete('/:id', authenticateToken, checkPermission('payment_edit'), (req, res) => {
+router.delete('/:id', authenticateToken, requirePermission({ anyOfPermissions: ['payment_edit'], anyOfRoles: ['Admin'] }), requireFeature('payment_integration'), (req, res) => {
   try {
     const db = req.app.locals.db;
     const { id } = req.params;

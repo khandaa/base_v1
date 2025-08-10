@@ -4,6 +4,15 @@
 - Simplified access control across backend and frontend
   - Added unified middleware `requirePermission()` and `requireFeature()` in `middleware/access.js`
   - Refactored `backend/routes/feature-toggles.js` to use `requirePermission` (removed inline admin/permission checks)
+  - Refactored backend modules to unified access layer with Admin override via `requirePermission({ anyOfRoles: ['Admin'] })`:
+    - `modules/user_management/backend/index.js`
+    - `modules/role_management/backend/index.js`
+    - `modules/permission_management/backend/index.js`
+    - `modules/payment/backend/index.js`
+  - Enforced feature toggle on payment APIs using `requireFeature('payment_integration')`:
+    - `modules/payment/backend/index.js`
+    - `backend/routes/payment-qr-codes.js`
+  - Replaced legacy `checkPermissions`/`checkPermission` usage across these modules
   - Normalized frontend `FeatureToggleContext` to use `is_enabled` and default missing features to disabled
   - Added `useGate()` hook for unified UI gating at `frontend/src/hooks/useGate.js`
   - Added `<Guard />` component at `frontend/src/components/common/Guard.js` for simple JSX protection

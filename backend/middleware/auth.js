@@ -12,11 +12,12 @@ exports.authenticateToken = (req, res, next) => {
     return res.status(401).json({ success: false, message: 'No token provided' });
   }
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
     if (err) {
       return res.status(403).json({ success: false, message: 'Invalid or expired token' });
     }
-    req.user = user;
+    // Some modules sign tokens as { user: { ... } }, others as the user object directly
+    req.user = decoded && decoded.user ? decoded.user : decoded;
     next();
   });
 };

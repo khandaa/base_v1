@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../../../middleware/auth');
-const { checkPermissions } = require('../../../middleware/rbac');
+const { requirePermission } = require('../../../backend/middleware/access');
 const { dbMethods } = require('../../database/backend');
 
 // Register module events
@@ -30,7 +30,7 @@ const init = (app) => {
  * @description Get all permissions
  * @access Private - Requires permission_view permission
  */
-router.get('/permissions', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
+router.get('/permissions', authenticateToken, requirePermission({ anyOfPermissions: ['permission_view'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const eventBus = req.app.locals.eventBus;
@@ -75,7 +75,7 @@ router.get('/permissions', authenticateToken, checkPermissions(['permission_view
  * @description Get permission by ID
  * @access Private - Requires permission_view permission
  */
-router.get('/permissions/:id', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
+router.get('/permissions/:id', authenticateToken, requirePermission({ anyOfPermissions: ['permission_view'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const permissionId = req.params.id;
     const db = req.app.locals.db;
@@ -128,7 +128,7 @@ router.get('/permissions/:id', authenticateToken, checkPermissions(['permission_
  */
 router.post('/permissions', [
   authenticateToken, 
-  checkPermissions(['permission_assign']),
+  requirePermission({ anyOfPermissions: ['permission_assign'], anyOfRoles: ['Admin'] }),
   body('name').notEmpty().withMessage('Permission name is required')
     .matches(/^[a-z_]+$/).withMessage('Permission name must be lowercase with underscores only'),
   body('description').notEmpty().withMessage('Description is required')
@@ -204,7 +204,7 @@ router.post('/permissions', [
  */
 router.put('/permissions/:id', [
   authenticateToken, 
-  checkPermissions(['permission_assign']),
+  requirePermission({ anyOfPermissions: ['permission_assign'], anyOfRoles: ['Admin'] }),
   body('description').notEmpty().withMessage('Description is required')
 ], async (req, res) => {
   try {
@@ -265,7 +265,7 @@ router.put('/permissions/:id', [
  * @description Get all routes that exist but don't have corresponding permissions
  * @access Private - Requires permission_view permission
  */
-router.get('/missing-routes', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
+router.get('/missing-routes', authenticateToken, requirePermission({ anyOfPermissions: ['permission_view'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const eventBus = req.app.locals.eventBus;
@@ -392,7 +392,7 @@ router.get('/missing-routes', authenticateToken, checkPermissions(['permission_v
  */
 router.post('/create-missing-routes', [
   authenticateToken, 
-  checkPermissions(['permission_assign']),
+  requirePermission({ anyOfPermissions: ['permission_assign'], anyOfRoles: ['Admin'] }),
   body('permissions').isArray().withMessage('Permissions must be an array'),
   body('permissions.*.name').notEmpty().withMessage('Permission name is required'),
   body('permissions.*.description').notEmpty().withMessage('Permission description is required')
@@ -483,69 +483,13 @@ router.post('/create-missing-routes', [
 });
 
 /**
- * @route GET /api/permission_management/roles-permissions
- * @description Get all roles with their assigned permissions
- * @access Private - Requires permission_view permission
- */
-router.get('/roles-permissions', authenticateToken, checkPermissions(['permission_view']), async (req, res) => {
-  try {
-    const db = req.app.locals.db;
-    const eventBus = req.app.locals.eventBus;
-    
-    // Get all roles
-    const roles = await dbMethods.all(db, 
-      'SELECT role_id, name, description, created_at FROM roles_master ORDER BY name',
-      []
-    );
-    
-    // For each role, get their permissions
-    for (const role of roles) {
-      const permissions = await dbMethods.all(db, 
-        `SELECT p.permission_id, p.name, p.description
-         FROM permissions_master p
-         JOIN role_permissions_tx rp ON p.permission_id = rp.permission_id
-         WHERE rp.role_id = ?
-         ORDER BY p.name`,
-        [role.role_id]
-      );
-      
-      role.permissions = permissions;
-      role.permission_count = permissions.length;
-    }
-    
-    // Get total permission count for reference
-    const totalPermissions = await dbMethods.get(db, 
-      'SELECT COUNT(*) as count FROM permissions_master',
-      []
-    );
-    
-    // Log activity
-    eventBus.emit('log:activity', {
-      user_id: req.user.user_id,
-      action: 'ROLES_PERMISSIONS_VIEW',
-      details: 'Retrieved roles with their permissions',
-      ip_address: req.ip,
-      user_agent: req.headers['user-agent']
-    });
-    
-    return res.status(200).json({
-      roles,
-      total_permissions: totalPermissions.count
-    });
-  } catch (error) {
-    console.error('Error fetching roles with permissions:', error);
-    return res.status(500).json({ error: 'Failed to retrieve roles with permissions' });
-  }
-});
-
-/**
  * @route POST /api/permission_management/assign
  * @description Assign or remove permissions from a role
  * @access Private - Requires permission_assign permission
  */
 router.post('/assign', [
   authenticateToken, 
-  checkPermissions(['permission_assign']),
+  requirePermission({ anyOfPermissions: ['permission_assign'], anyOfRoles: ['Admin'] }),
   body('role_id').isNumeric().withMessage('Valid role ID is required'),
   body('permissions').isArray().withMessage('Permissions must be an array'),
 ], async (req, res) => {

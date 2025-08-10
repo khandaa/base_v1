@@ -49,6 +49,14 @@ base_v1/
   - Frontend guard hook `useGate()` in `frontend/src/hooks/useGate.js`
   - `<Guard />` component in `frontend/src/components/common/Guard.js`
   - Feature toggles default to disabled if undefined; frontend normalized to read `is_enabled`
+  - Backend modules refactored to use unified middleware with Admin override:
+    - `modules/user_management/backend/index.js`
+    - `modules/role_management/backend/index.js`
+    - `modules/permission_management/backend/index.js`
+    - `modules/payment/backend/index.js`
+  - Payment APIs now enforce `requireFeature('payment_integration')` in:
+    - `modules/payment/backend/index.js`
+    - `backend/routes/payment-qr-codes.js`
 
 - **Route Feature Toggles**:
   - Comprehensive feature toggle system for all application routes

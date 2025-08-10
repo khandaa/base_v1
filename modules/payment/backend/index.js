@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../../../middleware/auth');
-const { checkPermissions } = require('../../../middleware/rbac');
+const { requirePermission, requireFeature } = require('../../../backend/middleware/access');
 const { dbMethods } = require('../../database/backend');
 const multer = require('multer');
 const fs = require('fs');
@@ -61,26 +61,8 @@ const upload = multer({
   }
 });
 
-// Feature toggle check middleware
-const checkPaymentFeatureEnabled = async (req, res, next) => {
-  try {
-    const db = req.app.locals.db;
-    const featureToggle = await dbMethods.get(db, 
-      'SELECT is_enabled FROM feature_toggles WHERE feature_name = ?', 
-      ['payment_integration']
-    );
-
-    // Check if feature toggle exists and is enabled (1)
-    // SQLite stores boolean as integers 0/1
-    if (!featureToggle || featureToggle.is_enabled !== 1) {
-      return res.status(403).json({ error: 'Payment integration feature is not enabled' });
-    }
-    next();
-  } catch (error) {
-    console.error('Error checking payment feature toggle:', error);
-    return res.status(500).json({ error: 'Error checking payment feature' });
-  }
-};
+// Feature toggle check via unified middleware
+const checkPaymentFeatureEnabled = requireFeature('payment_integration');
 
 // Initialize the module
 const init = (app) => {
@@ -166,7 +148,7 @@ router.get('/status', async (req, res) => {
  */
 router.get('/qr-codes', [
   authenticateToken, 
-  checkPermissions(['payment_view']),
+  requirePermission({ anyOfPermissions: ['payment_view'], anyOfRoles: ['Admin'] }),
   checkPaymentFeatureEnabled
 ], async (req, res) => {
   try {
@@ -212,7 +194,7 @@ router.get('/qr-codes', [
  */
 router.get('/qr-codes/:id', [
   authenticateToken, 
-  checkPermissions(['payment_view']),
+  requirePermission({ anyOfPermissions: ['payment_view'], anyOfRoles: ['Admin'] }),
   checkPaymentFeatureEnabled
 ], async (req, res) => {
   try {
@@ -263,7 +245,7 @@ router.get('/qr-codes/:id', [
  */
 router.post('/qr-codes', [
   authenticateToken, 
-  checkPermissions(['payment_create']),
+  requirePermission({ anyOfPermissions: ['payment_create'], anyOfRoles: ['Admin'] }),
   checkPaymentFeatureEnabled,
   upload.single('qr_code_image'),
   body('name').notEmpty().withMessage('QR code name is required'),
@@ -349,7 +331,7 @@ router.post('/qr-codes', [
  */
 router.put('/qr-codes/:id', [
   authenticateToken, 
-  checkPermissions(['payment_edit']),
+  requirePermission({ anyOfPermissions: ['payment_edit'], anyOfRoles: ['Admin'] }),
   checkPaymentFeatureEnabled,
   body('payment_name').optional().notEmpty().withMessage('QR code name cannot be empty'),
   body('payment_type').optional().notEmpty().withMessage('Payment type cannot be empty')
@@ -447,7 +429,7 @@ router.put('/qr-codes/:id', [
  */
 router.delete('/qr-codes/:id', [
   authenticateToken, 
-  checkPermissions(['payment_delete']),
+  requirePermission({ anyOfPermissions: ['payment_delete'], anyOfRoles: ['Admin'] }),
   checkPaymentFeatureEnabled
 ], async (req, res) => {
   try {

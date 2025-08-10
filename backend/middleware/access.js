@@ -24,7 +24,20 @@ const requirePermission = ({ anyOfPermissions = [], anyOfRoles = [] } = {}) => {
     }
 
     const userPermissions = req.user.permissions || [];
-    const userRoles = (req.user.roles || []).map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean);
+    // Normalize roles: support array of strings/objects and single string at req.user.role
+    const normalizedRoles = (() => {
+      const rolesFromArray = Array.isArray(req.user.roles)
+        ? req.user.roles.map(r => (typeof r === 'string' ? r : r?.name)).filter(Boolean)
+        : [];
+      const singleRole = typeof req.user.role === 'string' && req.user.role.trim() ? [req.user.role.trim()] : [];
+      const rolesFromString = typeof req.user.roles === 'string' && req.user.roles.trim() ? [req.user.roles.trim()] : [];
+      return Array.from(new Set([...
+        rolesFromArray,
+        ...singleRole,
+        ...rolesFromString,
+      ]));
+    })();
+    const userRoles = normalizedRoles;
 
     const hasPerm = (anyOfPermissions || []).length === 0
       || anyOfPermissions.some(p => userPermissions.includes(p));

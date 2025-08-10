@@ -7,7 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../../../middleware/auth');
-const { checkPermissions } = require('../../../middleware/rbac');
+const { requirePermission } = require('../../../backend/middleware/access');
 const { dbMethods } = require('../../database/backend');
 const multer = require('multer');
 const csv = require('csv-parser');
@@ -77,7 +77,7 @@ const init = (app) => {
  * @description Get all roles
  * @access Private - Requires role_view permission
  */
-router.get('/roles', authenticateToken, checkPermissions(['role_view']), async (req, res) => {
+router.get('/roles', authenticateToken, requirePermission({ anyOfPermissions: ['role_view'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const eventBus = req.app.locals.eventBus;
@@ -137,7 +137,7 @@ router.get('/roles', authenticateToken, checkPermissions(['role_view']), async (
  */
 router.get('/roles/template', [
   authenticateToken,
-  checkPermissions(['role_create'])
+  requirePermission({ anyOfPermissions: ['role_create'], anyOfRoles: ['Admin'] })
 ], (req, res) => {
   try {
     // Set headers for CSV download
@@ -176,7 +176,7 @@ router.get('/roles/template', [
  */
 router.post('/roles/bulk', [
   authenticateToken,
-  checkPermissions(['role_create']),
+  requirePermission({ anyOfPermissions: ['role_create'], anyOfRoles: ['Admin'] }),
   upload.single('file')
 ], async (req, res) => {
   try {
@@ -263,7 +263,7 @@ router.post('/roles/bulk', [
  * @description Get a specific role by ID
  * @access Private - Requires role_view permission
  */
-router.get('/roles/:id', authenticateToken, checkPermissions(['role_view']), async (req, res) => {
+router.get('/roles/:id', authenticateToken, requirePermission({ anyOfPermissions: ['role_view'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const roleId = req.params.id;
     const db = req.app.locals.db;
@@ -327,7 +327,7 @@ router.get('/roles/:id', authenticateToken, checkPermissions(['role_view']), asy
  */
 router.post('/roles', [
   authenticateToken, 
-  checkPermissions(['role_create']),
+  requirePermission({ anyOfPermissions: ['role_create'], anyOfRoles: ['Admin'] }),
   body('name').notEmpty().withMessage('Role name is required'),
   body('description').optional(),
   body('permissions').isArray().withMessage('Permissions must be an array')
@@ -404,7 +404,7 @@ router.post('/roles', [
  */
 router.put('/roles/:id', [
   authenticateToken, 
-  checkPermissions(['role_edit']),
+  requirePermission({ anyOfPermissions: ['role_edit'], anyOfRoles: ['Admin'] }),
   body('name').optional().notEmpty().withMessage('Role name cannot be empty'),
   body('description').optional(),
   body('permissions').optional().isArray().withMessage('Permissions must be an array')
@@ -526,7 +526,7 @@ router.put('/roles/:id', [
  * @description Delete a role
  * @access Private - Requires role_delete permission
  */
-router.delete('/roles/:id', authenticateToken, checkPermissions(['role_delete']), async (req, res) => {
+router.delete('/roles/:id', authenticateToken, requirePermission({ anyOfPermissions: ['role_delete'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const roleId = req.params.id;
     const db = req.app.locals.db;

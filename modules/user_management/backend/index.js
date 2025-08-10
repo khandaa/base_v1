@@ -8,7 +8,7 @@ const express = require('express');
 const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const { authenticateToken } = require('../../../middleware/auth');
-const { checkPermissions } = require('../../../middleware/rbac');
+const { requirePermission } = require('../../../backend/middleware/access');
 const { dbMethods } = require('../../database/backend');
 const multer = require('multer');
 const csv = require('csv-parser');
@@ -75,7 +75,7 @@ const init = (app) => {
  * @description Get all users with optional filtering
  * @access Private - Requires user_view permission
  */
-router.get('/users', authenticateToken, checkPermissions(['user_view']), async (req, res) => {
+router.get('/users', authenticateToken, requirePermission({ anyOfPermissions: ['user_view'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const db = req.app.locals.db;
     const eventBus = req.app.locals.eventBus;
@@ -195,7 +195,7 @@ router.get('/users', authenticateToken, checkPermissions(['user_view']), async (
  */
 router.post('/users', [
   authenticateToken, 
-  checkPermissions(['user_create']),
+  requirePermission({ anyOfPermissions: ['user_create'], anyOfRoles: ['Admin'] }),
   body('first_name').notEmpty().withMessage('First name is required'),
   body('last_name').notEmpty().withMessage('Last name is required'),
   body('email').isEmail().withMessage('Valid email is required'),
@@ -290,7 +290,7 @@ router.post('/users', [
  * @description Get user by ID
  * @access Private - Requires user_view permission
  */
-router.get('/users/:id', authenticateToken, checkPermissions(['user_view']), async (req, res) => {
+router.get('/users/:id', authenticateToken, requirePermission({ anyOfPermissions: ['user_view'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const userId = req.params.id;
     const db = req.app.locals.db;
@@ -346,7 +346,7 @@ router.get('/users/:id', authenticateToken, checkPermissions(['user_view']), asy
  */
 router.put('/users/:id', [
   authenticateToken, 
-  checkPermissions(['user_edit']),
+  requirePermission({ anyOfPermissions: ['user_edit'], anyOfRoles: ['Admin'] }),
   body('first_name').optional().notEmpty().withMessage('First name cannot be empty'),
   body('last_name').optional().notEmpty().withMessage('Last name cannot be empty'),
   body('email').optional().isEmail().withMessage('Valid email is required'),
@@ -472,8 +472,8 @@ router.put('/users/:id', [
  * @access Private - Requires user_edit permission
  */
 router.patch('/users/:id/status', [
-  authenticateToken, 
-  checkPermissions(['user_edit']),
+  authenticateToken,
+  requirePermission({ anyOfPermissions: ['user_edit'], anyOfRoles: ['Admin'] }),
   body('is_active').isBoolean().withMessage('is_active must be a boolean')
 ], async (req, res) => {
   try {
@@ -532,7 +532,7 @@ router.patch('/users/:id/status', [
  * @description Delete a user
  * @access Private - Requires user_delete permission
  */
-router.delete('/users/:id', authenticateToken, checkPermissions(['user_delete']), async (req, res) => {
+router.delete('/users/:id', authenticateToken, requirePermission({ anyOfPermissions: ['user_delete'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     const userId = req.params.id;
     const db = req.app.locals.db;
@@ -595,7 +595,7 @@ router.delete('/users/:id', authenticateToken, checkPermissions(['user_delete'])
  * @description Download a CSV template for bulk user upload
  * @access Private - Requires user_create permission
  */
-router.get('/users/template', authenticateToken, checkPermissions(['user_create']), async (req, res) => {
+router.get('/users/template', authenticateToken, requirePermission({ anyOfPermissions: ['user_create'], anyOfRoles: ['Admin'] }), async (req, res) => {
   try {
     // CSV header row
     const header = 'firstName,lastName,email,password,roles,isActive,mobileNumber\n';
@@ -631,7 +631,7 @@ router.get('/users/template', authenticateToken, checkPermissions(['user_create'
  * @description Upload and process multiple users from CSV file
  * @access Private - Requires user_create permission
  */
-router.post('/users/bulk', authenticateToken, checkPermissions(['user_create']), upload.single('file'), async (req, res) => {
+router.post('/users/bulk', authenticateToken, requirePermission({ anyOfPermissions: ['user_create'], anyOfRoles: ['Admin'] }), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
